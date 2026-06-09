@@ -1,99 +1,170 @@
-import { fetchMatchesByDate, NormalizedMatch } from "@/lib/sportsdb";
+import Image from "next/image";
+import { fetchFixturesByDate, NormalizedMatch } from "@/lib/apifootball";
+import { LEAGUE_IDS } from "@/lib/leagues";
 import LiveScoreClient from "@/components/LiveScoreClient";
+import HeroCountdown from "@/components/HeroCountdown";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().slice(0, 10);
   let matches: NormalizedMatch[] = [];
-  try { matches = await fetchMatchesByDate(today, "all"); } catch { /**/ }
+  try {
+    const all = await fetchFixturesByDate(today);
+    matches = all.filter((m) => LEAGUE_IDS.includes(m.leagueId ?? ""));
+  } catch { /**/ }
 
-  const initial = {
-    live:      matches.filter(m => m.status === "live"),
-    upcoming:  matches.filter(m => m.status === "upcoming"),
-    finished:  matches.filter(m => m.status === "finished"),
-    date:      today,
-    leagueId:  "all",
-    fetchedAt: Date.now(),
-  };
+  const live     = matches.filter((m) => m.status === "live");
+  const upcoming = matches.filter((m) => m.status === "upcoming");
+  const finished = matches.filter((m) => m.status === "finished");
+
+  const featured = live[0] ?? upcoming[0] ?? null;
+
+  const initial = { live, upcoming, finished, date: today, leagueId: "all", fetchedAt: Date.now() };
 
   return (
     <>
-      <Hero />
-      <LiveScoreClient initial={initial} />
+      {/* ── Hero ── */}
+      <section className="relative w-full bg-surface-container-high border-b-2 border-outline-variant overflow-hidden">
+        {/* BG image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/wc-bg.png"
+            alt=""
+            className="w-full h-full object-cover opacity-20"
+          />
+          <div className="absolute inset-0"
+            style={{ background: "linear-gradient(to top, #e8e8e8, transparent)" }} />
+        </div>
+
+        <div className="relative z-10 max-w-container-max mx-auto px-4 md:px-10 py-16 md:py-24
+          text-center md:text-left flex flex-col md:flex-row items-center gap-12">
+
+          {/* Left: copy + countdown */}
+          <div className="flex-1 space-y-6">
+            <span className="inline-block bg-tertiary-container text-on-tertiary-container px-4 py-1
+              rounded-full text-sm font-bold border-2 border-outline-variant">
+              Tournament Kickoff
+            </span>
+
+            <h1 className="font-montserrat font-black text-on-surface leading-tight"
+              style={{ fontSize: "clamp(2.2rem, 6vw, 4rem)", letterSpacing: "-0.02em" }}>
+              The Pitch Awaits.
+            </h1>
+
+            <p className="text-lg text-on-surface-variant max-w-xl leading-relaxed">
+              Track every goal, foul, and moment of glory in real-time.
+              Unapologetically bold stats for the true fans.
+            </p>
+
+            <HeroCountdown />
+          </div>
+
+          {/* Right: featured match card */}
+          <div className="flex-1 w-full max-w-md">
+            <FeaturedCard match={featured} />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Match sections ── */}
+      <div className="max-w-container-max mx-auto px-4 md:px-10 py-10 pb-20">
+        <LiveScoreClient initial={initial} />
+      </div>
     </>
   );
 }
 
-function Hero() {
-  return (
-    <div className="relative overflow-hidden rounded-xl mb-8"
-      style={{
-        background: "var(--bg2)",
-        border: "1px solid var(--line2)",
-        minHeight: 200,
-      }}>
-
-      {/* BG image — WC artwork cropped top portion */}
-      <div className="absolute inset-0"
-        style={{
-          backgroundImage: "url('/wc-bg.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center 20%",
-          opacity: .22,
-        }} />
-
-      {/* Dark gradient over image */}
-      <div className="absolute inset-0"
-        style={{
-          background: "linear-gradient(90deg, rgba(10,10,10,.98) 35%, rgba(10,10,10,.6) 70%, transparent 100%)",
-        }} />
-
-      {/* Gold accent bar — left edge */}
-      <div className="absolute left-0 top-0 bottom-0 w-1"
-        style={{ background: "var(--gold)" }} />
-
-      <div className="relative z-10 px-8 py-8">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 mb-4"
-          style={{
-            background: "var(--gold)",
-            padding: "4px 12px",
-            borderRadius: 4,
-          }}>
-          <span className="barlow text-xs font-900 tracking-[.18em] uppercase"
-            style={{ color: "#000", fontWeight: 800 }}>
-            FIFA World Cup 2026
-          </span>
+/* ── Featured match card (right side of hero) ── */
+function FeaturedCard({ match }: { match: NormalizedMatch | null }) {
+  if (!match) {
+    return (
+      <div className="card-flat rounded-2xl p-8 text-center space-y-3">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <span className="w-2 h-2 rounded-full bg-primary pulse-dot" />
+          <span className="text-sm font-bold text-primary uppercase tracking-widest">Coming Soon</span>
         </div>
-
-        <h1 className="barlow font-black uppercase leading-none mb-1"
-          style={{ fontSize: "clamp(2rem,5vw,3.4rem)", letterSpacing: ".01em" }}>
-          <span style={{ color: "var(--white)" }}>LIVE SCORES &amp;</span>
-          <br />
-          <span style={{ color: "var(--gold)" }}>FIXTURES</span>
-        </h1>
-
-        <p className="text-sm mt-3 max-w-xs" style={{ color: "var(--fade)", lineHeight: 1.6 }}>
-          Real-time updates, match stats and everything about World Cup 2026.
+        <div className="font-montserrat font-black text-on-surface text-2xl">World Cup 2026</div>
+        <p className="text-sm text-on-surface-variant">
+          Opening match kicks off June 11, 2026. Check back then for live scores.
         </p>
-
-        {/* Stats strip */}
-        <div className="flex gap-8 mt-6">
-          {[
-            { n: "48",  l: "Nations"       },
-            { n: "104", l: "Matches"       },
-            { n: "16",  l: "Host Cities"   },
-            { n: "3",   l: "Host Countries"},
-          ].map(s => (
-            <div key={s.n}>
-              <div className="anton text-2xl leading-none" style={{ color: "var(--gold)" }}>{s.n}</div>
-              <div className="text-[10px] font-semibold tracking-widest uppercase mt-0.5" style={{ color: "var(--fade)" }}>
-                {s.l}
-              </div>
-            </div>
-          ))}
+        <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full border border-primary/30
+          bg-primary/5 text-primary text-sm font-bold">
+          <span className="material-symbols-outlined text-[16px]">schedule</span>
+          48 Nations · 104 Matches · 3 Countries
         </div>
+      </div>
+    );
+  }
+
+  const isLive = match.status === "live";
+
+  return (
+    <div className="card-flat rounded-2xl p-6 relative overflow-hidden">
+      {/* Live badge */}
+      {isLive && (
+        <div className="absolute top-4 right-4 flex items-center gap-2 bg-error-container
+          text-on-error-container px-3 py-1 rounded-full border border-error text-sm font-bold">
+          <span className="w-2 h-2 rounded-full bg-error pulse-dot" />
+          LIVE {match.minute ? `${match.minute}'` : "NOW"}
+        </div>
+      )}
+
+      <div className="text-center">
+        <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+          {match.league} {match.round ? `· ${match.round}` : ""}
+        </span>
+
+        <div className="flex items-center justify-between mt-6 gap-2">
+          {/* Home */}
+          <div className="flex flex-col items-center gap-2 flex-1">
+            {match.homeTeam.logo ? (
+              <div className="w-16 h-16 rounded-full bg-surface-variant border-2 border-outline
+                flex items-center justify-center overflow-hidden">
+                <Image src={match.homeTeam.logo} alt={match.homeTeam.name}
+                  width={64} height={64} className="object-contain" unoptimized />
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-surface-container border-2 border-outline
+                flex items-center justify-center text-3xl">⚽</div>
+            )}
+            <span className="font-montserrat font-bold text-on-surface text-sm text-center leading-tight">
+              {match.homeTeam.name}
+            </span>
+          </div>
+
+          {/* Score */}
+          <div className="font-montserrat font-black text-4xl px-4 py-2 bg-surface-container
+            rounded-xl border-2 border-outline-variant text-on-surface tabular-nums shrink-0">
+            {match.score.home !== null
+              ? `${match.score.home} – ${match.score.away}`
+              : match.time}
+          </div>
+
+          {/* Away */}
+          <div className="flex flex-col items-center gap-2 flex-1">
+            {match.awayTeam.logo ? (
+              <div className="w-16 h-16 rounded-full bg-surface-variant border-2 border-outline
+                flex items-center justify-center overflow-hidden">
+                <Image src={match.awayTeam.logo} alt={match.awayTeam.name}
+                  width={64} height={64} className="object-contain" unoptimized />
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-surface-container border-2 border-outline
+                flex items-center justify-center text-3xl">⚽</div>
+            )}
+            <span className="font-montserrat font-bold text-on-surface text-sm text-center leading-tight">
+              {match.awayTeam.name}
+            </span>
+          </div>
+        </div>
+
+        {match.venue && (
+          <p className="mt-5 text-primary text-sm font-bold bg-primary/5 inline-block
+            px-4 py-2 rounded-full border border-primary/20">
+            📍 {match.venue}
+          </p>
+        )}
       </div>
     </div>
   );

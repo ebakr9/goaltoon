@@ -1,193 +1,228 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { fetchMatchById, fetchMatchStats, MatchStat } from "@/lib/sportsdb";
+import {
+  fetchFixtureById,
+  fetchFixtureEvents,
+  fetchFixtureStats,
+  fetchFixtureLineups,
+} from "@/lib/apifootball";
 import { getCountryConfig } from "@/lib/countries";
-import PredictionButtons from "@/components/PredictionButtons";
+import MatchDetailClient from "@/components/MatchDetailClient";
 
 interface Props { params: { id: string } }
 
 export const revalidate = 30;
 
 export async function generateMetadata({ params }: Props) {
-  const match = await fetchMatchById(params.id);
+  const match = await fetchFixtureById(params.id);
   if (!match) return { title: "Match – Goaltoon" };
   return { title: `${match.homeTeam.name} vs ${match.awayTeam.name} – Goaltoon` };
 }
 
 export default async function MatchPage({ params }: Props) {
-  const [match, stats] = await Promise.all([
-    fetchMatchById(params.id),
-    fetchMatchStats(params.id),
+  const [match, events, stats, lineups] = await Promise.all([
+    fetchFixtureById(params.id),
+    fetchFixtureEvents(params.id),
+    fetchFixtureStats(params.id),
+    fetchFixtureLineups(params.id),
   ]);
+
   if (!match) notFound();
 
-  const hCfg = getCountryConfig(match.homeTeam.name);
-  const aCfg = getCountryConfig(match.awayTeam.name);
-  const isLive     = match.status === "live";
-  const isFinished = match.status === "finished";
+  const hCfg      = getCountryConfig(match.homeTeam.name);
+  const aCfg      = getCountryConfig(match.awayTeam.name);
+  const isLive    = match.status === "live";
+  const isDone    = match.status === "finished";
+  const goalEvents = events.filter((e) => e.type === "Goal");
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-14 py-6">
+
+      {/* Back */}
       <a href="/" className="back-link inline-flex items-center gap-1.5 barlow text-sm font-bold
-        tracking-wide uppercase mb-6">
+        tracking-wide uppercase mb-5">
         ← Back
       </a>
 
-      {/* ── Match header ── */}
-      <div className="relative overflow-hidden rounded-xl p-6 mb-5"
-        style={{
-          background: "var(--bg2)",
-          border: `1px solid ${isLive ? "rgba(230,48,48,.5)" : "var(--line2)"}`,
-          boxShadow: isLive ? "0 0 30px rgba(230,48,48,.1)" : "none",
-        }}>
+      {/* ══ Header grid: score panel (8) + goal celebration (4) ══ */}
+      <header className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-stretch mb-6">
 
-        {/* Team colour tint */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: `linear-gradient(110deg, ${hCfg.color}12 0%, transparent 50%, ${aCfg.color}12 100%)`,
-        }} />
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 h-[3px]" style={{
-          background: isLive
-            ? "var(--red)"
-            : `linear-gradient(90deg, ${hCfg.color}bb 0%, var(--gold) 50%, ${aCfg.color}bb 100%)`,
-        }} />
+        {/* ── Left 8: pitch score panel ── */}
+        <div
+          className="lg:col-span-8 rounded-2xl overflow-hidden card-border-bold relative
+            pitch-pattern-dense flex flex-col sm:flex-row"
+          style={{ boxShadow: "8px 8px 0 0 #1a1c1c", minHeight: 168 }}
+        >
+          <div className="absolute inset-0 stadium-geo opacity-50 z-0" />
 
-        <div className="relative z-10">
-          {/* League + status */}
-          <div className="flex items-center justify-between mb-5">
-            <span className="barlow text-xs font-bold tracking-[.14em] uppercase"
-              style={{ color: "var(--fade)" }}>{match.league}</span>
-
-            {isLive && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded"
-                style={{ background: "var(--redbg)", border: "1px solid rgba(230,48,48,.4)" }}>
-                <span className="liveblink w-1.5 h-1.5 rounded-full" style={{ background: "var(--red)" }} />
-                <span className="barlow text-xs font-bold tracking-widest uppercase" style={{ color: "var(--red)" }}>
-                  {match.minute ? `${match.minute}'` : "LIVE"}
-                </span>
+          {/* Home side */}
+          <div
+            className="flex-1 p-5 md:p-7 flex flex-col items-center justify-center relative z-10"
+            style={{ background: `linear-gradient(to right, ${hCfg.color}cc, transparent)` }}
+          >
+            {match.homeTeam.logo ? (
+              <div className="w-[68px] h-[68px] md:w-20 md:h-20 rounded-full bg-white border-4
+                border-white overflow-hidden mb-2 shadow-[4px_4px_0_0_#1a1c1c]">
+                <Image src={match.homeTeam.logo} alt={match.homeTeam.name}
+                  width={80} height={80} className="w-full h-full object-contain" unoptimized />
               </div>
+            ) : (
+              <span className="text-5xl mb-2">{hCfg.flag}</span>
             )}
-            {isFinished && (
-              <span className="barlow text-xs font-bold tracking-widest uppercase px-2.5 py-1 rounded"
-                style={{ background: "var(--bg3)", border: "1px solid var(--line)", color: "var(--fade)" }}>
-                Full Time
-              </span>
-            )}
-            {!isLive && !isFinished && (
-              <span className="barlow text-xs font-bold tracking-widest uppercase px-2.5 py-1 rounded"
-                style={{ background: "rgba(245,197,24,.08)", border: "1px solid rgba(245,197,24,.25)", color: "var(--gold)" }}>
-                Upcoming
-              </span>
-            )}
+            <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white text-center
+              drop-shadow-[2px_2px_0px_#1a1c1c]">
+              {abbr(match.homeTeam.name)}
+            </h2>
           </div>
 
-          {/* Teams + Score */}
-          <div className="flex items-center gap-4 justify-between">
-            <TeamBlock name={match.homeTeam.name} badge={match.homeTeam.badge} flag={hCfg.flag} mascot={hCfg.mascot} />
+          {/* Score center */}
+          <div className="flex flex-col items-center justify-center py-5 px-4 z-20 relative gap-2.5 shrink-0">
+            {/* Status badge */}
+            {isLive ? (
+              <div className="flex items-center gap-2 bg-error text-white font-bold px-3.5 py-1.5
+                rounded-full text-xs uppercase tracking-wider card-border-bold-sm">
+                <span className="w-2 h-2 rounded-full bg-white liveblink" />
+                LIVE {match.minute}&apos;
+              </div>
+            ) : isDone ? (
+              <span className="barlow text-xs font-bold uppercase tracking-widest px-3.5 py-1.5
+                rounded-full bg-surface text-on-surface-variant border-2 border-on-surface">
+                FULL TIME
+              </span>
+            ) : (
+              <span className="barlow text-xs font-bold uppercase tracking-widest px-3.5 py-1.5
+                rounded-full bg-surface text-on-surface-variant border-2 border-on-surface">
+                {match.time} UTC
+              </span>
+            )}
 
-            <div className="text-center shrink-0">
-              {match.score.home !== null ? (
-                <div className="anton text-[4rem] leading-none tabular-nums" style={{ color: "var(--white)" }}>
-                  {match.score.home} – {match.score.away}
-                </div>
-              ) : (
-                <div className="anton text-2xl" style={{ color: "var(--gold)" }}>{match.time}</div>
-              )}
-              <div className="barlow text-xs mt-1.5" style={{ color: "var(--fade)" }}>{match.date}</div>
-              {match.venue && (
-                <div className="barlow text-xs font-semibold mt-0.5" style={{ color: "var(--chalk)" }}>
-                  {match.venue}
-                </div>
-              )}
+            {/* Score glass */}
+            <div className="glass-panel px-5 py-3 rounded-2xl" style={{ boxShadow: "6px 6px 0 0 #1a1c1c" }}>
+              <div className="font-montserrat font-black text-5xl md:text-6xl text-on-surface
+                tabular-nums tracking-tighter">
+                {match.score.home !== null
+                  ? `${match.score.home} – ${match.score.away}`
+                  : "vs"}
+              </div>
             </div>
 
-            <TeamBlock name={match.awayTeam.name} badge={match.awayTeam.badge} flag={aCfg.flag} mascot={aCfg.mascot} />
+            {/* Meta */}
+            <div className="flex flex-col items-center gap-1">
+              {match.halftime.home !== null && (
+                <span className="text-white/90 text-[11px] font-bold bg-black/60 px-3 py-1
+                  rounded-full border border-white/20 backdrop-blur-sm">
+                  HT {match.halftime.home}–{match.halftime.away} · {match.date}
+                </span>
+              )}
+              {match.venue && (
+                <span className="text-white/60 text-[10px] font-semibold">📍 {match.venue}</span>
+              )}
+            </div>
           </div>
 
-          {!isFinished && (
-            <div className="mt-5">
-              <PredictionButtons matchId={match.id} homeTeam={match.homeTeam.name}
-                awayTeam={match.awayTeam.name} disabled={false} />
+          {/* Away side */}
+          <div
+            className="flex-1 p-5 md:p-7 flex flex-col items-center justify-center relative z-10"
+            style={{ background: `linear-gradient(to left, ${aCfg.color}cc, transparent)` }}
+          >
+            {match.awayTeam.logo ? (
+              <div className="w-[68px] h-[68px] md:w-20 md:h-20 rounded-full bg-white border-4
+                border-white overflow-hidden mb-2 shadow-[4px_4px_0_0_#1a1c1c]">
+                <Image src={match.awayTeam.logo} alt={match.awayTeam.name}
+                  width={80} height={80} className="w-full h-full object-contain" unoptimized />
+              </div>
+            ) : (
+              <span className="text-5xl mb-2">{aCfg.flag}</span>
+            )}
+            <h2 className="font-montserrat font-black text-2xl md:text-3xl text-white text-center
+              drop-shadow-[2px_2px_0px_#1a1c1c]">
+              {abbr(match.awayTeam.name)}
+            </h2>
+          </div>
+        </div>
+
+        {/* ── Right 4: Goal Celebration ── */}
+        <div
+          className="lg:col-span-4 bg-surface rounded-2xl p-5 card-border-bold flex flex-col gap-3"
+          style={{ boxShadow: "8px 8px 0 0 #1a1c1c" }}
+        >
+          <h3 className="font-montserrat font-black text-base border-b-4 border-on-surface pb-2
+            flex items-center gap-2 uppercase italic tracking-tight shrink-0">
+            <span
+              className="material-symbols-outlined text-primary"
+              style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
+            >
+              sports_soccer
+            </span>
+            Goal Celebration
+          </h3>
+
+          {goalEvents.length === 0 ? (
+            <p className="text-sm text-on-surface-variant text-center py-4 flex-1">
+              No goals yet
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2 flex-1 overflow-y-auto">
+              {goalEvents.map((ge, i) => {
+                const logo = ge.teamId === match.homeTeam.id
+                  ? match.homeTeam.logo
+                  : match.awayTeam.logo;
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2.5
+                      bg-surface-container-lowest rounded-lg card-border-bold-sm"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-black text-xs bg-on-surface text-white
+                        px-2 py-0.5 rounded shrink-0">
+                        {ge.minute}{ge.extraMinute ? `+${ge.extraMinute}` : ""}′
+                      </span>
+                      <span className="font-montserrat font-black text-sm italic uppercase
+                        tracking-tight text-primary truncate">
+                        {ge.player}
+                      </span>
+                    </div>
+                    {logo && (
+                      <Image src={logo} alt={ge.teamName} width={26} height={26}
+                        className="rounded-full border-2 border-outline-variant
+                          object-contain shrink-0 ml-2"
+                        unoptimized />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
+
+          {/* League footer */}
+          <div className="flex items-center gap-2 pt-2 border-t border-outline-variant shrink-0 mt-auto">
+            {match.leagueLogo && (
+              <Image src={match.leagueLogo} alt={match.league ?? ""} width={18} height={18}
+                className="object-contain shrink-0" unoptimized />
+            )}
+            <span className="text-xs font-bold text-on-surface-variant truncate">{match.league}</span>
+            {match.round && (
+              <span className="text-[11px] text-on-surface-variant/60 truncate">· {match.round}</span>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* ── Stats ── */}
-      {stats.length > 0 && (
-        <section className="mb-8">
-          <div className="section-header mb-4">
-            <h2 className="section-title">Match Stats</h2>
-          </div>
-          <div className="rounded-xl overflow-hidden"
-            style={{ background: "var(--bg2)", border: "1px solid var(--line2)" }}>
-            <div className="grid grid-cols-3 px-4 py-3"
-              style={{ borderBottom: "1px solid var(--line)" }}>
-              <span className="barlow text-[10px] font-bold tracking-widest uppercase text-center truncate"
-                style={{ color: "var(--fade)" }}>{match.homeTeam.name}</span>
-              <span className="barlow text-[10px] font-bold tracking-widest uppercase text-center"
-                style={{ color: "var(--fade)" }}>Stat</span>
-              <span className="barlow text-[10px] font-bold tracking-widest uppercase text-center truncate"
-                style={{ color: "var(--fade)" }}>{match.awayTeam.name}</span>
-            </div>
-            {stats.map((stat, i) => (
-              <StatRow key={i} stat={stat} isLast={i === stats.length - 1} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {stats.length === 0 && isFinished && (
-        <p className="text-center py-8 text-sm" style={{ color: "var(--fade)" }}>
-          No statistics available for this match.
-        </p>
-      )}
-      {isLive && stats.length === 0 && (
-        <p className="text-center text-sm mt-4" style={{ color: "var(--fade)" }}>
-          Statistics will appear as the match progresses…
-        </p>
-      )}
+      {/* ══ Dashboard body (client — polls when live) ══ */}
+      <MatchDetailClient
+        match={match}
+        events={events}
+        stats={stats}
+        lineups={lineups}
+      />
     </div>
   );
 }
 
-function StatRow({ stat, isLast }: { stat: MatchStat; isLast: boolean }) {
-  const home = stat.home ?? 0;
-  const away = stat.away ?? 0;
-  const total = home + away;
-  const homeW = total === 0 ? 50 : Math.round((home / total) * 100);
-
-  return (
-    <div className="px-4 py-3" style={!isLast ? { borderBottom: "1px solid var(--line)" } : {}}>
-      <div className="grid grid-cols-3 items-center mb-2">
-        <span className="text-center text-sm font-bold tabular-nums" style={{ color: "var(--white)" }}>
-          {stat.home ?? "–"}
-        </span>
-        <span className="barlow text-center text-[10px] font-bold tracking-wide uppercase"
-          style={{ color: "var(--fade)" }}>{stat.name}</span>
-        <span className="text-center text-sm font-bold tabular-nums" style={{ color: "var(--white)" }}>
-          {stat.away ?? "–"}
-        </span>
-      </div>
-      {total > 0 && (
-        <div className="flex rounded overflow-hidden h-1" style={{ gap: 1 }}>
-          <div style={{ width: `${homeW}%`, background: "var(--gold)", borderRadius: 2 }} />
-          <div style={{ width: `${100 - homeW}%`, background: "var(--cyan)", borderRadius: 2 }} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TeamBlock({ name, badge, flag }: { name: string; badge?: string; flag: string; mascot: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 w-28 text-center">
-      {badge ? (
-        <Image src={badge} alt={name} width={56} height={56} className="object-contain" unoptimized />
-      ) : (
-        <span className="text-4xl leading-none">{flag}</span>
-      )}
-      <span className="barlow text-sm font-bold leading-tight" style={{ color: "var(--chalk)" }}>{name}</span>
-    </div>
-  );
+/** 3-4 letter abbreviation for a team name */
+function abbr(name: string): string {
+  const words = name.trim().split(/\s+/);
+  if (words.length === 1) return name.slice(0, 4).toUpperCase();
+  return words.slice(0, 2).map((w) => w.slice(0, 3).toUpperCase()).join(" ");
 }
