@@ -1,7 +1,25 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:www.thesportsdb.com)"
+      "WebFetch(domain:www.thesportsdb.com)",
+      "Bash(curl -s \"http://localhost:3000/api/live-scores?date=2026-05-24&leagueId=4328\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('live:', len\\(d['live']\\), '| upcoming:', len\\(d['upcoming']\\), '| finished:', len\\(d['finished']\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(m['homeTeam']['name'],'vs',m['awayTeam']['name'],m['score']\\) for m in d['finished']]\")",
+      "Bash(npm run *)",
+      "Bash(curl -s \"http://localhost:3002/api/live-scores?date=2026-05-24&leagueId=4328\")",
+      "Bash(Get-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "Bash(Stop-Process -Force)",
+      "Bash(Start-Sleep 2)",
+      "Bash(Write-Host \"Killed\")",
+      "PowerShell(cd \"c:\\\\Users\\\\irfan\\\\OneDrive\\\\Masaüstü\\\\Goaltoon\"; Start-Process powershell -ArgumentList \"-NoExit\", \"-Command\", \"npm run dev\" -WindowStyle Normal)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\irfan\\\\OneDrive\\\\Masaüstü\\\\\" | Where-Object { $_.Extension -match \"\\\\.\\(jpg|jpeg|png|webp\\)\" } | Select-Object Name, LastWriteTime)",
+      "Read(//c/Users/irfan/OneDrive/**)",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"https://www.thesportsdb.com/api/v1/json/123/lookupeventstats.php?id=2279756\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s \"https://www.thesportsdb.com/api/v1/json/123/lookuplinescores.php?id=2279756\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"https://www.thesportsdb.com/api/v1/json/123/lookuplineup.php?id=2279756\")"
     ]
   }
 }

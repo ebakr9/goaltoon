@@ -2,63 +2,71 @@
 
 import { useEffect, useState } from "react";
 import { getPrediction, setPrediction, Prediction } from "@/lib/predictions";
-import clsx from "clsx";
 
-interface Props {
-  matchId: string;
-  homeTeam: string;
-  awayTeam: string;
-  disabled?: boolean;
-}
-
-const OPTIONS: { value: Prediction; label: (h: string, a: string) => string; emoji: string; color: string }[] = [
-  { value: "home", label: (h) => h, emoji: "🏠", color: "hover:bg-blue-600 data-[active=true]:bg-blue-600" },
-  { value: "draw", label: () => "Draw", emoji: "🤝", color: "hover:bg-yellow-600 data-[active=true]:bg-yellow-600" },
-  { value: "away", label: (_, a) => a, emoji: "✈️", color: "hover:bg-red-600 data-[active=true]:bg-red-600" },
+const OPTS: { v: Prediction; short: string }[] = [
+  { v: "home", short: "1" },
+  { v: "draw", short: "X" },
+  { v: "away", short: "2" },
 ];
 
-export default function PredictionButtons({ matchId, homeTeam, awayTeam, disabled }: Props) {
-  const [prediction, setPred] = useState<Prediction | null>(null);
+const ACT: Record<Prediction, { bg: string; border: string; color: string }> = {
+  home: { bg: "var(--gold)",  border: "var(--gold2)",  color: "#000" },
+  draw: { bg: "var(--bg4)",   border: "var(--line2)",  color: "var(--white)" },
+  away: { bg: "var(--red)",   border: "#ff5252",        color: "#fff" },
+};
 
-  useEffect(() => {
-    setPred(getPrediction(matchId));
-  }, [matchId]);
+export default function PredictionButtons({
+  matchId, homeTeam, awayTeam, disabled,
+}: { matchId: string; homeTeam: string; awayTeam: string; disabled?: boolean }) {
+  const [pick, setPick] = useState<Prediction | null>(null);
+  useEffect(() => { setPick(getPrediction(matchId)); }, [matchId]);
 
-  function handleClick(val: Prediction) {
+  function toggle(v: Prediction) {
     if (disabled) return;
-    const next = prediction === val ? null : val;
-    if (next) {
-      setPrediction(matchId, next);
-    } else {
-      // toggle off — clear
-      localStorage.removeItem(`goaltoon_pred_${matchId}`);
-    }
-    setPred(next);
+    const next = pick === v ? null : v;
+    if (next) setPrediction(matchId, next);
+    else localStorage.removeItem(`goaltoon_pred_${matchId}`);
+    setPick(next);
   }
 
+  const labels: Record<Prediction, string> = {
+    home: homeTeam,
+    draw: "Draw",
+    away: awayTeam,
+  };
+
   return (
-    <div className="flex gap-2 mt-3">
-      {OPTIONS.map((opt) => (
-        <button
-          key={opt.value}
-          data-active={prediction === opt.value}
-          onClick={() => handleClick(opt.value)}
-          disabled={disabled}
-          className={clsx(
-            "flex-1 flex flex-col items-center gap-1 rounded-xl border border-white/10 py-2 px-1",
-            "text-xs font-bold transition-all duration-200",
-            "bg-white/5 text-slate-300",
-            opt.color,
-            disabled && "opacity-40 cursor-not-allowed",
-            prediction === opt.value && "ring-2 ring-white/40 text-white scale-105"
-          )}
-        >
-          <span className="text-lg">{opt.emoji}</span>
-          <span className="truncate max-w-full px-1">
-            {opt.label(homeTeam, awayTeam)}
-          </span>
-        </button>
-      ))}
+    <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--line)" }}>
+      <p className="barlow text-[9px] font-bold tracking-[.22em] uppercase text-center mb-2"
+        style={{ color: "var(--fade)" }}>
+        Your Prediction
+      </p>
+      <div className="flex gap-1.5">
+        {OPTS.map(o => {
+          const active = pick === o.v;
+          const c = active ? ACT[o.v] : null;
+          return (
+            <button key={o.v}
+              onClick={e => { e.preventDefault(); toggle(o.v); }}
+              disabled={disabled}
+              className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded transition-all duration-150"
+              style={{
+                background: c ? c.bg    : "var(--bg3)",
+                border:     `1px solid ${c ? c.border : "var(--line)"}`,
+                color:      c ? c.color : "var(--fade)",
+                opacity:    disabled ? .2 : 1,
+                cursor:     disabled ? "not-allowed" : "pointer",
+                transform:  active ? "translateY(-1px)" : "none",
+              }}>
+              <span className="anton text-sm leading-none">{o.short}</span>
+              <span className="barlow text-[8px] font-bold tracking-wide uppercase truncate max-w-full leading-none mt-0.5"
+                style={{ opacity: .8 }}>
+                {labels[o.v]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// TheSportsDB v1 free API (key: 123)
 const API_KEY = process.env.THESPORTSDB_API_KEY ?? "123";
 const BASE_URL = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
 
@@ -33,16 +32,6 @@ export interface RawEventStat {
   intAway: string | null;
 }
 
-export interface RawTimeline {
-  idTimeline: string;
-  strTimeline: string;
-  strTimelineDetail?: string;
-  strPlayer?: string;
-  strTeam?: string;
-  intTime?: string;
-  strType?: string;
-}
-
 export interface NormalizedMatch {
   id: string;
   homeTeam: { id: string; name: string; badge?: string };
@@ -64,14 +53,14 @@ export interface MatchStat {
   away: number | null;
 }
 
-export const LEAGUES: { id: string; name: string; flag: string }[] = [
-  { id: "all",  name: "All Soccer",          flag: "⚽" },
-  { id: "4328", name: "Premier League",       flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-  { id: "4335", name: "La Liga",              flag: "🇪🇸" },
-  { id: "4332", name: "Serie A",              flag: "🇮🇹" },
-  { id: "4331", name: "Bundesliga",           flag: "🇩🇪" },
-  { id: "4334", name: "Ligue 1",              flag: "🇫🇷" },
-  { id: "4337", name: "Eredivisie",           flag: "🇳🇱" },
+export const LEAGUES: { id: string; name: string; flag: string; group?: string }[] = [
+  { id: "all",  name: "All Soccer",    flag: "⚽",  group: "all" },
+  { id: "4429", name: "World Cup",     flag: "🏆",  group: "international" },
+  { id: "4328", name: "Premier League",flag: "󠁧󠁢󠁥󠁮󠁧󠁿🏴", group: "domestic" },
+  { id: "4335", name: "La Liga",       flag: "🇪🇸", group: "domestic" },
+  { id: "4332", name: "Serie A",       flag: "🇮🇹", group: "domestic" },
+  { id: "4331", name: "Bundesliga",    flag: "🇩🇪", group: "domestic" },
+  { id: "4334", name: "Ligue 1",       flag: "🇫🇷", group: "domestic" },
 ];
 
 export function normalizeMatch(e: RawEvent): NormalizedMatch {
@@ -82,16 +71,8 @@ export function normalizeMatch(e: RawEvent): NormalizedMatch {
 
   return {
     id: e.idEvent,
-    homeTeam: {
-      id: e.idHomeTeam,
-      name: e.strHomeTeam,
-      badge: e.strHomeTeamBadge ?? undefined,
-    },
-    awayTeam: {
-      id: e.idAwayTeam,
-      name: e.strAwayTeam,
-      badge: e.strAwayTeamBadge ?? undefined,
-    },
+    homeTeam: { id: e.idHomeTeam, name: e.strHomeTeam, badge: e.strHomeTeamBadge ?? undefined },
+    awayTeam: { id: e.idAwayTeam, name: e.strAwayTeam, badge: e.strAwayTeamBadge ?? undefined },
     score: {
       home: e.intHomeScore !== null && e.intHomeScore !== "" ? Number(e.intHomeScore) : null,
       away: e.intAwayScore !== null && e.intAwayScore !== "" ? Number(e.intAwayScore) : null,
@@ -107,14 +88,13 @@ export function normalizeMatch(e: RawEvent): NormalizedMatch {
   };
 }
 
-// Fetch matches for a given date. leagueId="all" → s=Soccer, else l={leagueId}
 export async function fetchMatchesByDate(
   date: string,
   leagueId: string = "all"
 ): Promise<NormalizedMatch[]> {
   const param = leagueId === "all" ? `s=Soccer` : `l=${leagueId}`;
   const res = await fetch(url(`/eventsday.php?d=${date}&${param}`), {
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
   if (!res.ok) return [];
   const data = await res.json();
@@ -123,9 +103,7 @@ export async function fetchMatchesByDate(
 }
 
 export async function fetchMatchById(id: string): Promise<NormalizedMatch | null> {
-  const res = await fetch(url(`/lookupevent.php?id=${id}`), {
-    next: { revalidate: 30 },
-  });
+  const res = await fetch(url(`/lookupevent.php?id=${id}`), { next: { revalidate: 30 } });
   if (!res.ok) return null;
   const data = await res.json();
   const event: RawEvent | undefined = data?.events?.[0];
@@ -133,9 +111,7 @@ export async function fetchMatchById(id: string): Promise<NormalizedMatch | null
 }
 
 export async function fetchMatchStats(id: string): Promise<MatchStat[]> {
-  const res = await fetch(url(`/lookupeventstats.php?id=${id}`), {
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(url(`/lookupeventstats.php?id=${id}`), { next: { revalidate: 60 } });
   if (!res.ok) return [];
   const data = await res.json();
   const raw: RawEventStat[] = data?.eventstats ?? [];
@@ -144,8 +120,4 @@ export async function fetchMatchStats(id: string): Promise<MatchStat[]> {
     home: s.intHome !== null ? Number(s.intHome) : null,
     away: s.intAway !== null ? Number(s.intAway) : null,
   }));
-}
-
-export async function fetchMatchTimeline(_id: string): Promise<RawTimeline[]> {
-  return [];
 }

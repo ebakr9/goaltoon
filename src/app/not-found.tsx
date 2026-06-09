@@ -1,17 +1,21 @@
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center py-32 text-center gap-4">
-      <span className="text-8xl">⚽</span>
-      <h1
-        className="text-4xl font-bold text-yellow-400"
-        style={{ fontFamily: "'Fredoka One', cursive" }}
+      <div
+        className="text-7xl font-black text-[var(--gold-lt)] opacity-20"
+        style={{ fontFamily: "'Bebas Neue', sans-serif" }}
       >
-        Off Target!
+        404
+      </div>
+      <h1 className="text-xl font-bold text-[var(--text)] uppercase tracking-widest"
+        style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
+        Page Not Found
       </h1>
-      <p className="text-slate-400">This page doesn&apos;t exist.</p>
+      <p className="text-xs text-[var(--muted)]">This page doesn&apos;t exist.</p>
       <a
         href="/"
-        className="mt-4 rounded-xl bg-yellow-500 text-black font-bold px-6 py-2.5 hover:bg-yellow-400 transition-colors"
+        className="mt-4 rounded-sm bg-[var(--gold)] text-black font-bold text-xs
+          px-6 py-2.5 hover:bg-[var(--gold-lt)] transition-colors uppercase tracking-widest"
       >
         Back to Fixtures
       </a>

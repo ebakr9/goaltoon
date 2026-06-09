@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { NormalizedMatch, LEAGUES } from "@/lib/sportsdb";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LEAGUES, NormalizedMatch } from "@/lib/sportsdb";
 import MatchCard from "./MatchCard";
 
 interface MatchData {
@@ -13,238 +13,219 @@ interface MatchData {
   fetchedAt: number;
 }
 
-function todayStr() {
-  return new Date().toISOString().split("T")[0];
-}
-
-// Generate last 7 days + today + next 3 days as quick picks
-function quickDates(): { label: string; value: string }[] {
-  const result = [];
-  for (let i = -6; i <= 3; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    const val = d.toISOString().split("T")[0];
-    const label =
-      i === 0 ? "Today" :
-      i === -1 ? "Yesterday" :
-      i === 1 ? "Tomorrow" :
-      d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-    result.push({ label, value: val });
-  }
-  return result;
-}
+const today  = () => new Date().toISOString().split("T")[0];
+const offset = (n: number) => {
+  const d = new Date(); d.setDate(d.getDate() + n);
+  return d.toISOString().split("T")[0];
+};
 
 export default function LiveScoreClient({ initial }: { initial: MatchData }) {
-  const [data, setData] = useState<MatchData>(initial);
-  const [selectedDate, setSelectedDate] = useState(initial.date);
-  const [selectedLeague, setSelectedLeague] = useState(initial.leagueId);
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [data, setData]           = useState<MatchData>(initial);
+  const [selDate, setSelDate]     = useState(initial.date);
+  const [selLeague, setSelLeague] = useState(initial.leagueId);
+  const [loading, setLoading]     = useState(false);
+  const [updated, setUpdated]     = useState(new Date());
+  const pending                   = useRef("");
 
-  const fetchData = useCallback(async (date: string, leagueId: string) => {
-    setIsLoading(true);
+  const load = useCallback(async (date: string, league: string) => {
+    const key = `${date}|${league}`;
+    pending.current = key;
+    setLoading(true);
     try {
-      const res = await fetch(
-        `/api/live-scores?date=${date}&leagueId=${leagueId}`,
-        { cache: "no-store" }
-      );
-      if (res.ok) {
-        const json: MatchData = await res.json();
-        setData(json);
-        setLastUpdated(new Date());
+      const res = await fetch(`/api/live-scores?date=${date}&leagueId=${league}`, { cache: "no-store" });
+      if (res.ok && pending.current === key) {
+        setData(await res.json()); setUpdated(new Date());
       }
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { if (pending.current === key) setLoading(false); }
   }, []);
 
-  // Auto-refresh only when viewing today
   useEffect(() => {
-    if (selectedDate !== todayStr()) return;
-    const id = setInterval(() => fetchData(selectedDate, selectedLeague), 60_000);
+    if (selDate !== today()) return;
+    const id = setInterval(() => load(selDate, selLeague), 60_000);
     return () => clearInterval(id);
-  }, [selectedDate, selectedLeague, fetchData]);
+  }, [selDate, selLeague, load]);
 
-  function handleDateChange(date: string) {
-    setSelectedDate(date);
-    fetchData(date, selectedLeague);
-  }
+  const changeDate   = (d: string) => { setSelDate(d);   load(d, selLeague); };
+  const changeLeague = (l: string) => { setSelLeague(l); load(selDate, l);   };
 
-  function handleLeagueChange(leagueId: string) {
-    setSelectedLeague(leagueId);
-    fetchData(selectedDate, leagueId);
-  }
+  const isStale = data.date !== selDate || data.leagueId !== selLeague;
+  const total   = data.live.length + data.upcoming.length + data.finished.length;
 
-  const isToday = selectedDate === todayStr();
-  const dates = quickDates();
-  const total = data.live.length + data.upcoming.length + data.finished.length;
+  const QUICK = [
+    { label: "Yesterday", val: offset(-1) },
+    { label: "Today",     val: today()    },
+    { label: "Tomorrow",  val: offset(1)  },
+  ];
 
   return (
     <div>
-      {/* ── League selector ── */}
-      <div className="mb-4 overflow-x-auto pb-1">
-        <div className="flex gap-2 min-w-max">
-          {LEAGUES.map((lg) => (
-            <button
-              key={lg.id}
-              onClick={() => handleLeagueChange(lg.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap
-                ${selectedLeague === lg.id
-                  ? "bg-yellow-400 text-black border-yellow-400"
-                  : "bg-[#1a1f2e] text-slate-400 border-[#2e3650] hover:border-slate-500 hover:text-white"
-                }`}
-            >
-              <span>{lg.flag}</span>
-              <span>{lg.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* ── Filter panel ── */}
+      <div className="mb-6 rounded-xl overflow-hidden"
+        style={{ background: "var(--bg2)", border: "1px solid var(--line2)" }}>
 
-      {/* ── Date selector ── */}
-      <div className="mb-6">
-        {/* Quick date pills */}
-        <div className="overflow-x-auto pb-1 mb-2">
-          <div className="flex gap-2 min-w-max">
-            {dates.map((d) => (
-              <button
-                key={d.value}
-                onClick={() => handleDateChange(d.value)}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap
-                  ${selectedDate === d.value
-                    ? "bg-blue-500 text-white border-blue-500"
-                    : "bg-[#1a1f2e] text-slate-400 border-[#2e3650] hover:border-slate-500 hover:text-white"
-                  }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Custom date input + status bar */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-500 font-medium">Custom date:</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => e.target.value && handleDateChange(e.target.value)}
-              className="bg-[#1a1f2e] border border-[#2e3650] text-slate-300 text-xs rounded-lg px-2.5 py-1.5
-                focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30
-                [color-scheme:dark]"
-            />
-          </div>
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            <span>
-              Updated:{" "}
-              {lastUpdated.toLocaleTimeString("en-GB", {
-                hour: "2-digit", minute: "2-digit", second: "2-digit",
+        {/* League tabs */}
+        <div className="px-4 pt-4 pb-3"
+          style={{ borderBottom: "1px solid var(--line)" }}>
+          <p className="barlow text-[10px] font-bold tracking-[.2em] uppercase mb-3"
+            style={{ color: "var(--fade)" }}>Competition</p>
+          <div className="nobar overflow-x-auto">
+            <div className="flex gap-1.5 min-w-max">
+              {LEAGUES.map(lg => {
+                const active = selLeague === lg.id;
+                const isWC   = lg.id === "4429";
+                return (
+                  <button key={lg.id} onClick={() => changeLeague(lg.id)}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[11px] font-bold
+                      tracking-wide transition-all duration-150 whitespace-nowrap barlow"
+                    style={{
+                      background:  active ? (isWC ? "var(--gold)" : "var(--bg4)") : "var(--bg3)",
+                      border:      `1px solid ${active ? (isWC ? "var(--gold2)" : "var(--line2)") : "var(--line)"}`,
+                      color:       active ? (isWC ? "#000" : "var(--white)") : "var(--fade)",
+                      boxShadow:   active && isWC ? "0 0 20px rgba(245,197,24,.3)" : "none",
+                      transform:   active ? "translateY(-1px)" : "none",
+                      letterSpacing: ".06em",
+                    }}>
+                    <span className="text-sm leading-none">{lg.flag}</span>
+                    <span>{lg.name}</span>
+                  </button>
+                );
               })}
-            </span>
-            <button
-              onClick={() => fetchData(selectedDate, selectedLeague)}
-              disabled={isLoading}
-              className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
-            >
-              <span className={isLoading ? "animate-spin inline-block" : "inline-block"}>↻</span>
-              {isLoading ? "Loading…" : "Refresh"}
-            </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Date row */}
+        <div className="px-4 py-3 flex items-center gap-3 flex-wrap">
+          <p className="barlow text-[10px] font-bold tracking-[.2em] uppercase"
+            style={{ color: "var(--fade)" }}>Date</p>
+
+          <div className="flex gap-1">
+            {QUICK.map(q => {
+              const active = selDate === q.val;
+              return (
+                <button key={q.label} onClick={() => changeDate(q.val)}
+                  className="px-3 py-1.5 rounded text-xs font-bold tracking-wide transition-all duration-150 barlow"
+                  style={{
+                    background:  active ? "var(--gold)" : "var(--bg3)",
+                    border:      `1px solid ${active ? "var(--gold2)" : "var(--line)"}`,
+                    color:       active ? "#000" : "var(--fade)",
+                    transform:   active ? "translateY(-1px)" : "none",
+                    letterSpacing: ".06em",
+                  }}>
+                  {q.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="w-px h-4" style={{ background: "var(--line2)" }} />
+
+          <div className="flex items-center gap-2">
+            <span className="barlow text-[10px] font-bold tracking-widest uppercase"
+              style={{ color: "var(--fade)" }}>Go to</span>
+            <input type="date" value={selDate}
+              onChange={e => e.target.value && changeDate(e.target.value)}
+              className="text-xs font-medium px-2.5 py-1.5 rounded outline-none [color-scheme:dark]"
+              style={{
+                background: "var(--bg3)",
+                border: "1px solid var(--line2)",
+                color: "var(--white)",
+                fontFamily: "inherit",
+              }} />
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Status */}
+          <div className="flex items-center gap-2">
+            {loading
+              ? <span className="flex items-center gap-1.5 text-xs font-semibold barlow"
+                  style={{ color: "var(--gold)" }}>
+                  <span className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin inline-block" />
+                  Loading…
+                </span>
+              : <span className="text-[11px] tabular-nums" style={{ color: "var(--fade)" }}>
+                  {updated.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </span>
+            }
+            <button onClick={() => load(selDate, selLeague)} disabled={loading}
+              className="text-lg transition-colors disabled:opacity-20"
+              style={{ color: "var(--fade)", lineHeight: 1 }}
+              title="Refresh">↻</button>
           </div>
         </div>
       </div>
 
-      {/* ── Loading skeleton ── */}
-      {isLoading && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-44 rounded-2xl bg-[#1a1f2e] border border-[#2e3650] animate-pulse"
-            />
-          ))}
-        </div>
-      )}
+      {/* ── Match list ── */}
+      <div style={{
+        opacity: loading && isStale ? .45 : 1,
+        pointerEvents: loading && isStale ? "none" : "auto",
+        transition: "opacity .2s",
+      }}>
+        {data.live.length > 0 && (
+          <Section label="Live Now" count={data.live.length} accent="var(--red)" dot>
+            <Grid matches={data.live} />
+          </Section>
+        )}
+        {data.upcoming.length > 0 && (
+          <Section label="Fixtures" count={data.upcoming.length} accent="var(--gold)">
+            <Grid matches={data.upcoming} />
+          </Section>
+        )}
+        {data.finished.length > 0 && (
+          <Section label="Results" count={data.finished.length} accent="var(--chalk)">
+            <Grid matches={data.finished} />
+          </Section>
+        )}
 
-      {/* ── Content ── */}
-      {!isLoading && (
-        <>
-          {/* Live */}
-          {data.live.length > 0 && (
-            <section className="mb-8">
-              <SectionHeader title="Live Now" count={data.live.length} accent="text-red-400" dot />
-              <MatchGrid matches={data.live} />
-            </section>
-          )}
+        {loading && isStale && total === 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[1,2,3,4].map(i =>
+              <div key={i} className="h-44 rounded-xl animate-pulse"
+                style={{ background: "var(--bg2)", border: "1px solid var(--line)" }} />
+            )}
+          </div>
+        )}
 
-          {/* Upcoming */}
-          {data.upcoming.length > 0 && (
-            <section className="mb-8">
-              <SectionHeader
-                title={isToday ? "Today's Fixtures" : "Fixtures"}
-                count={data.upcoming.length}
-                accent="text-blue-400"
-              />
-              <MatchGrid matches={data.upcoming} />
-            </section>
-          )}
-
-          {/* Finished */}
-          {data.finished.length > 0 && (
-            <section className="mb-8">
-              <SectionHeader title="Results" count={data.finished.length} accent="text-slate-400" />
-              <MatchGrid matches={data.finished} />
-            </section>
-          )}
-
-          {/* Empty state */}
-          {total === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-              <span className="text-7xl">⚽</span>
-              <p
-                className="text-xl font-bold text-slate-400"
-                style={{ fontFamily: "'Fredoka One', cursive" }}
-              >
-                No matches found
-              </p>
-              <p className="text-sm text-slate-600">
-                Try a different date or league.
+        {!loading && !isStale && total === 0 && (
+          <div className="py-24 flex flex-col items-center gap-4 text-center slideup">
+            <div className="text-5xl opacity-20">⚽</div>
+            <div>
+              <p className="barlow font-bold text-lg tracking-widest uppercase"
+                style={{ color: "var(--chalk)" }}>No Matches Found</p>
+              <p className="text-sm mt-1" style={{ color: "var(--fade)" }}>
+                Try a different date or competition.
               </p>
             </div>
-          )}
-        </>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function SectionHeader({
-  title, count, accent, dot,
-}: {
-  title: string; count: number; accent: string; dot?: boolean;
-}) {
+function Section({ label, count, accent, dot, children }:
+  { label: string; count: number; accent: string; dot?: boolean; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      {dot && <span className="live-dot w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />}
-      <h2
-        className={`text-xl font-bold ${accent}`}
-        style={{ fontFamily: "'Fredoka One', cursive" }}
-      >
-        {title}
-      </h2>
-      <span className="text-xs font-bold text-slate-600 bg-slate-800 rounded-full px-2 py-0.5">
-        {count}
-      </span>
-    </div>
+    <section className="mb-8 slideup">
+      <div className="section-header">
+        {dot && <span className="liveblink w-2 h-2 rounded-full shrink-0" style={{ background: "var(--red)" }} />}
+        <h2 className="section-title" style={{ color: accent }}>{label}</h2>
+        <div className="flex-1 h-px" style={{ background: "var(--line)" }} />
+        <span className="barlow text-xs font-bold px-2 py-0.5 rounded"
+          style={{ background: "var(--bg3)", border: "1px solid var(--line2)", color: "var(--fade)" }}>
+          {count}
+        </span>
+      </div>
+      {children}
+    </section>
   );
 }
 
-function MatchGrid({ matches }: { matches: NormalizedMatch[] }) {
+function Grid({ matches }: { matches: NormalizedMatch[] }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {matches.map((m) => (
-        <MatchCard key={m.id} match={m} />
-      ))}
+    <div className="grid gap-2.5 sm:grid-cols-2">
+      {matches.map(m => <MatchCard key={m.id} match={m} />)}
     </div>
   );
 }

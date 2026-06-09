@@ -1,15 +1,28 @@
-import { Redis } from "@upstash/redis";
+// Redis is optional — if env vars are missing, all cache ops are no-ops
+// This lets the app run locally without Upstash configured
 
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+let redis: import("@upstash/redis").Redis | null = null;
 
-export const CACHE_TTL = 60; // seconds
+function getClient() {
+  if (redis) return redis;
+  const url   = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token || url.startsWith("your_") || token.startsWith("your_")) {
+    return null;
+  }
+  // Lazy import so the module doesn't throw at load time when env vars are missing
+  const { Redis } = require("@upstash/redis");
+  redis = new Redis({ url, token });
+  return redis;
+}
+
+export const CACHE_TTL = 60;
 
 export async function getCached<T>(key: string): Promise<T | null> {
   try {
-    return await redis.get<T>(key);
+    const client = getClient();
+    if (!client) return null;
+    return await client.get<T>(key);
   } catch {
     return null;
   }
@@ -17,8 +30,10 @@ export async function getCached<T>(key: string): Promise<T | null> {
 
 export async function setCached<T>(key: string, value: T, ttl = CACHE_TTL): Promise<void> {
   try {
-    await redis.set(key, value, { ex: ttl });
+    const client = getClient();
+    if (!client) return;
+    await client.set(key, value, { ex: ttl });
   } catch {
-    // cache write failure is non-fatal
+    // non-fatal
   }
 }
