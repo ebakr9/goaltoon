@@ -8,6 +8,7 @@ import {
 } from "@/lib/apifootball";
 import { getCountryConfig } from "@/lib/countries";
 import MatchDetailClient from "@/components/MatchDetailClient";
+import PredictionWidget from "@/components/PredictionWidget";
 
 interface Props { params: { id: string } }
 
@@ -207,6 +208,17 @@ export default async function MatchPage({ params }: Props) {
             )}
           </div>
         </div>
+
+        {/* Prediction widget — upcoming matches only */}
+        {!isLive && !isDone && (
+          <div className="lg:col-span-12">
+            <PredictionWidget
+              fixtureId={match.id}
+              homeTeam={match.homeTeam.name}
+              awayTeam={match.awayTeam.name}
+            />
+          </div>
+        )}
       </header>
 
       {/* ══ Dashboard body (client — polls when live) ══ */}

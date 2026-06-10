@@ -77,7 +77,6 @@ nav, main, footer { position: relative; z-index: 1; }
    PAGE SHELL — no sidebar, just topbar offset
 ══════════════════════════════════════════ */
 .page-shell {
-  padding-top: var(--topbar-h);
   min-height: 100vh;
 }
 
@@ -93,6 +92,13 @@ nav, main, footer { position: relative; z-index: 1; }
 .card-border-bold {
   border: 3px solid #1a1c1c;
   box-shadow: 6px 6px 0px 0px #1a1c1c;
+}
+
+.card-sticker {
+  background-color: #ffffff;
+  border: 2px solid #bbcbbb;
+  box-shadow: 4px 4px 0px 0px rgba(0,0,0,0.1);
+  border-radius: 0.75rem;
 }
 
 .card-border-bold-sm {

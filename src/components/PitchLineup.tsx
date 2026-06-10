@@ -8,7 +8,6 @@ interface Placed extends MatchPlayer {
   col: number;
 }
 
-// Parse grid "row:col" or fall back to position grouping
 function parsePlayers(players: MatchPlayer[]): Placed[] {
   const withGrid = players.filter((p) => p.grid);
 
@@ -19,7 +18,6 @@ function parsePlayers(players: MatchPlayer[]): Placed[] {
     });
   }
 
-  // Fallback: group by position code when grid isn't available
   const order: Record<string, number> = { G: 1, D: 2, M: 3, F: 4 };
   const buckets: Record<number, MatchPlayer[]> = {};
   for (const p of players) {
@@ -39,7 +37,8 @@ function shortName(name: string): string {
   return `${parts[0][0]}. ${parts[parts.length - 1]}`;
 }
 
-// x% based on column within its row, y% based on row index within the team half
+// Horizontal pitch: x = depth (left=home GK, right=away GK), y = width
+// row → depth axis, col → width axis
 function calcPos(
   p: Placed,
   maxRow: number,
@@ -47,14 +46,15 @@ function calcPos(
   isHome: boolean
 ): { x: number; y: number } {
   const colsInRow = allPlayers.filter((q) => q.row === p.row).length;
-  const x = (p.col / (colsInRow + 1)) * 100;
+  // y: spread players across pitch width
+  const y = (p.col / (colsInRow + 1)) * 100;
 
-  // Home → bottom half (GK at ~92%, highest row at ~57%)
-  // Away → top half   (GK at ~8%,  highest row at ~43%)
   const spread = 35;
   const norm = (p.row - 1) / Math.max(maxRow - 1, 1);
 
-  const y = isHome ? 92 - norm * spread : 8 + norm * spread;
+  // Home: left side — GK at ~8%, outfield pushes right toward centre
+  // Away: right side — GK at ~92%, outfield pushes left toward centre
+  const x = isHome ? 8 + norm * spread : 92 - norm * spread;
   return { x, y };
 }
 
@@ -77,10 +77,10 @@ export default function PitchLineup({ home, away }: Props) {
         <TeamHeader lineup={away} align="right" colorClass="text-tertiary" />
       </div>
 
-      {/* Pitch */}
+      {/* Horizontal Pitch */}
       <div
-        className="relative w-full max-w-[380px] mx-auto rounded-xl overflow-hidden select-none"
-        style={{ aspectRatio: "68/105" }}
+        className="relative w-full max-w-2xl mx-auto rounded-xl overflow-hidden select-none"
+        style={{ aspectRatio: "105/68" }}
       >
         <PitchSVG />
 
@@ -184,16 +184,14 @@ function PlayerDot({
       className="absolute flex flex-col items-center pointer-events-none"
       style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)", zIndex: 10 }}
     >
-      {/* Jersey circle */}
       <div
-        className={`w-8 h-8 rounded-full ${bg} border-2 ${ring} shadow-lg
-          flex items-center justify-center font-montserrat font-bold text-[11px] ${textColor}`}
+        className={`w-6 h-6 rounded-full ${bg} border-2 ${ring} shadow-lg
+          flex items-center justify-center font-montserrat font-bold text-[10px] ${textColor}`}
       >
         {player.number}
       </div>
-      {/* Name */}
       <span
-        className="mt-0.5 text-[8px] font-bold text-white text-center leading-tight max-w-[52px] truncate"
+        className="mt-0.5 text-[9px] font-bold text-white text-center leading-tight max-w-[56px] truncate"
         style={{ textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.6)" }}
       >
         {shortName(player.name)}
@@ -221,7 +219,6 @@ function SubstitutesList({ home, away }: { home: MatchLineup; away: MatchLineup 
             className="grid grid-cols-[1fr_16px_1fr] items-center gap-1 px-4 py-2"
             style={!isLast ? { borderBottom: "1px solid #bbcbbb" } : {}}
           >
-            {/* Home sub */}
             {h ? (
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-bold w-5 text-center bg-surface-container rounded text-on-surface-variant shrink-0">
@@ -233,7 +230,6 @@ function SubstitutesList({ home, away }: { home: MatchLineup; away: MatchLineup 
             <div className="flex justify-center">
               <span className="w-1 h-1 rounded-full bg-outline-variant" />
             </div>
-            {/* Away sub */}
             {a ? (
               <div className="flex items-center gap-1.5 justify-end">
                 <span className="text-xs font-semibold text-on-surface truncate text-right">{a.name}</span>
@@ -249,8 +245,8 @@ function SubstitutesList({ home, away }: { home: MatchLineup; away: MatchLineup 
   );
 }
 
-// ─── Football pitch SVG ───────────────────────────────────────────────────────
-// ViewBox 0 0 68 105 (meters). Real pitch proportions.
+// ─── Horizontal Football Pitch SVG ───────────────────────────────────────────
+// ViewBox 0 0 105 68 (meters). Pitch on its side: left=home, right=away.
 
 function PitchSVG() {
   const lc = "rgba(255,255,255,0.65)";
@@ -259,67 +255,67 @@ function PitchSVG() {
   return (
     <svg
       className="absolute inset-0 w-full h-full"
-      viewBox="0 0 68 105"
+      viewBox="0 0 105 68"
       preserveAspectRatio="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Alternating grass stripes */}
+      {/* Alternating grass stripes (vertical) */}
       {Array.from({ length: 7 }).map((_, i) => (
-        <rect key={i} x="0" y={i * 15} width="68" height="15"
+        <rect key={i} x={i * 15} y="0" width="15" height="68"
           fill={i % 2 === 0 ? "#2e7d32" : "#33902e"} />
       ))}
 
       <g stroke={lc} strokeWidth={lw} fill="none">
         {/* Outer boundary */}
-        <rect x="2" y="2" width="64" height="101" />
+        <rect x="2" y="2" width="101" height="64" />
 
         {/* Halfway line */}
-        <line x1="2" y1="52.5" x2="66" y2="52.5" />
+        <line x1="52.5" y1="2" x2="52.5" y2="66" />
 
         {/* Centre circle + spot */}
-        <circle cx="34" cy="52.5" r="9.15" />
-        <circle cx="34" cy="52.5" r="0.5" fill={lc} stroke="none" />
+        <circle cx="52.5" cy="34" r="9.15" />
+        <circle cx="52.5" cy="34" r="0.5" fill={lc} stroke="none" />
 
-        {/* ── Top half (away) ── */}
+        {/* ── Left half (home) ── */}
         {/* Penalty area */}
-        <rect x="13.84" y="2" width="40.32" height="16.5" />
+        <rect x="2" y="13.84" width="16.5" height="40.32" />
         {/* Goal area */}
-        <rect x="24.84" y="2" width="18.32" height="5.5" />
+        <rect x="2" y="24.84" width="5.5" height="18.32" />
         {/* Penalty spot */}
-        <circle cx="34" cy="13" r="0.5" fill={lc} stroke="none" />
-        {/* Penalty arc (outside area) */}
-        <path d="M22.77 18.5 A9.15 9.15 0 0 1 45.23 18.5" />
-
-        {/* ── Bottom half (home) ── */}
-        {/* Penalty area */}
-        <rect x="13.84" y="86.5" width="40.32" height="16.5" />
-        {/* Goal area */}
-        <rect x="24.84" y="97" width="18.32" height="5.5" />
-        {/* Penalty spot */}
-        <circle cx="34" cy="92" r="0.5" fill={lc} stroke="none" />
+        <circle cx="13" cy="34" r="0.5" fill={lc} stroke="none" />
         {/* Penalty arc */}
-        <path d="M22.77 86.5 A9.15 9.15 0 0 0 45.23 86.5" />
+        <path d="M18.5 22.77 A9.15 9.15 0 0 0 18.5 45.23" />
+
+        {/* ── Right half (away) ── */}
+        {/* Penalty area */}
+        <rect x="86.5" y="13.84" width="16.5" height="40.32" />
+        {/* Goal area */}
+        <rect x="97" y="24.84" width="5.5" height="18.32" />
+        {/* Penalty spot */}
+        <circle cx="92" cy="34" r="0.5" fill={lc} stroke="none" />
+        {/* Penalty arc */}
+        <path d="M86.5 22.77 A9.15 9.15 0 0 1 86.5 45.23" />
       </g>
 
-      {/* Goals (white filled) */}
+      {/* Goals */}
       <g stroke={lc} strokeWidth={lw}>
-        <rect x="29.34" y="0.3" width="9.32" height="2.2" fill="rgba(255,255,255,0.15)" />
-        <rect x="29.34" y="102.5" width="9.32" height="2.2" fill="rgba(255,255,255,0.15)" />
+        <rect x="0.3" y="29.34" width="2.2" height="9.32" fill="rgba(255,255,255,0.15)" />
+        <rect x="102.5" y="29.34" width="2.2" height="9.32" fill="rgba(255,255,255,0.15)" />
       </g>
 
       {/* Corner arcs */}
       <g stroke={lc} strokeWidth={lw} fill="none">
-        <path d="M2 5.5 A3.5 3.5 0 0 0 5.5 2" />
-        <path d="M66 5.5 A3.5 3.5 0 0 1 62.5 2" />
-        <path d="M2 99.5 A3.5 3.5 0 0 1 5.5 103" />
-        <path d="M66 99.5 A3.5 3.5 0 0 0 62.5 103" />
+        <path d="M5.5 2 A3.5 3.5 0 0 0 2 5.5" />
+        <path d="M5.5 66 A3.5 3.5 0 0 1 2 62.5" />
+        <path d="M99.5 2 A3.5 3.5 0 0 1 103 5.5" />
+        <path d="M99.5 66 A3.5 3.5 0 0 0 103 62.5" />
       </g>
 
       {/* Team side labels */}
-      <text x="34" y="49.5" textAnchor="middle" fill="rgba(255,255,255,0.25)"
-        fontSize="3.5" fontFamily="sans-serif" fontWeight="bold">AWAY</text>
-      <text x="34" y="56.5" textAnchor="middle" fill="rgba(255,255,255,0.25)"
+      <text x="49" y="34.5" textAnchor="middle" fill="rgba(255,255,255,0.25)"
         fontSize="3.5" fontFamily="sans-serif" fontWeight="bold">HOME</text>
+      <text x="56" y="34.5" textAnchor="middle" fill="rgba(255,255,255,0.25)"
+        fontSize="3.5" fontFamily="sans-serif" fontWeight="bold">AWAY</text>
     </svg>
   );
 }

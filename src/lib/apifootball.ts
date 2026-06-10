@@ -359,6 +359,96 @@ export async function fetchStandings(leagueId: string, season: number): Promise<
   return groups.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+// ─── Tournament stats types ───────────────────────────────────────────────────
+
+interface AFPlayerStatRaw {
+  player: { id: number; name: string; photo: string; nationality: string };
+  statistics: {
+    team: { id: number; name: string; logo: string };
+    goals: { total: number | null; assists: number | null };
+    cards: { yellow: number; red: number };
+    games: { rating: string | null; appearences: number | null };
+  }[];
+}
+
+export interface PlayerStatEntry {
+  rank: number;
+  playerId: number;
+  playerName: string;
+  playerPhoto: string;
+  teamName: string;
+  teamLogo: string;
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  rating: number | null;
+  appearances: number;
+}
+
+function normalizePlayerStat(p: AFPlayerStatRaw, rank: number): PlayerStatEntry {
+  const s = p.statistics[0];
+  return {
+    rank,
+    playerId: p.player.id,
+    playerName: p.player.name,
+    playerPhoto: p.player.photo,
+    teamName: s?.team.name ?? "",
+    teamLogo: s?.team.logo ?? "",
+    goals: s?.goals.total ?? 0,
+    assists: s?.goals.assists ?? 0,
+    yellowCards: s?.cards.yellow ?? 0,
+    redCards: s?.cards.red ?? 0,
+    rating: s?.games.rating ? parseFloat(s.games.rating) : null,
+    appearances: s?.games.appearences ?? 0,
+  };
+}
+
+/**
+ * Upcoming fixtures for a specific league (next N matches, status=NS).
+ */
+export async function fetchUpcomingByLeague(leagueId: string, season: number, next: number = 48): Promise<NormalizedMatch[]> {
+  const raw = await apiFetch<AFFixture[]>(`/fixtures?league=${leagueId}&season=${season}&next=${next}&timezone=UTC`);
+  if (!raw) return [];
+  return raw.map(normalizeFixture);
+}
+
+export async function fetchTopScorers(leagueId: string, season: number): Promise<PlayerStatEntry[]> {
+  const raw = await apiFetch<AFPlayerStatRaw[]>(`/players/topscorers?league=${leagueId}&season=${season}`);
+  if (!raw) return [];
+  return raw.slice(0, 10).map((p, i) => normalizePlayerStat(p, i + 1));
+}
+
+export async function fetchTopAssists(leagueId: string, season: number): Promise<PlayerStatEntry[]> {
+  const raw = await apiFetch<AFPlayerStatRaw[]>(`/players/topassists?league=${leagueId}&season=${season}`);
+  if (!raw) return [];
+  return raw.slice(0, 10).map((p, i) => normalizePlayerStat(p, i + 1));
+}
+
+export async function fetchTopYellowCards(leagueId: string, season: number): Promise<PlayerStatEntry[]> {
+  const raw = await apiFetch<AFPlayerStatRaw[]>(`/players/topyellowcards?league=${leagueId}&season=${season}`);
+  if (!raw) return [];
+  return raw.slice(0, 10).map((p, i) => normalizePlayerStat(p, i + 1));
+}
+
+export async function fetchTopRedCards(leagueId: string, season: number): Promise<PlayerStatEntry[]> {
+  const raw = await apiFetch<AFPlayerStatRaw[]>(`/players/topredcards?league=${leagueId}&season=${season}`);
+  if (!raw) return [];
+  return raw.slice(0, 10).map((p, i) => normalizePlayerStat(p, i + 1));
+}
+
+export async function fetchTopRatings(leagueId: string, season: number): Promise<PlayerStatEntry[]> {
+  const raw = await apiFetch<AFPlayerStatRaw[]>(`/players/topscorers?league=${leagueId}&season=${season}`);
+  if (!raw) return [];
+  // sort by rating descending
+  return raw
+    .map((p, i) => normalizePlayerStat(p, i + 1))
+    .filter((p) => p.rating !== null)
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, 10)
+    .map((p, i) => ({ ...p, rank: i + 1 }));
+}
+
 export async function fetchFixtureLineups(id: string): Promise<MatchLineup[]> {
   const raw = await apiFetch<AFLineupRaw[]>(`/fixtures/lineups?fixture=${id}`);
   if (!raw) return [];
