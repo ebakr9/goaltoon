@@ -73,8 +73,8 @@ export default function MatchDetailClient({ match: initial, events: ie, stats: i
                 </span>
               )}
             </div>
-            {/* Scrollable timeline — max viewport height so it doesn't overflow */}
-            <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 160px)" }}>
+            {/* Fixed height = ~4 events visible, scroll for the rest */}
+            <div className="overflow-y-auto" style={{ maxHeight: 380 }}>
               <EventsTab events={events} match={match} isLive={isLive} />
             </div>
           </div>
@@ -200,7 +200,22 @@ function TimelineEvent({ event: e, match }: { event: MatchEvent; match: Normaliz
 
 // ─── Stats tab ────────────────────────────────────────────────────────────────
 
+const STAT_CATEGORIES: Record<string, { icon: string; keys: string[] }> = {
+  Shots:      { icon: "🎯", keys: ["total shots", "shots on goal", "shots off goal", "blocked shots", "shots insidebox", "shots outsidebox"] },
+  Passing:    { icon: "🎲", keys: ["ball possession", "total passes", "passes accurate", "passes %"] },
+  Duels:      { icon: "⚔️", keys: ["fouls", "corner kicks", "offsides", "goalkeeper saves"] },
+  Discipline: { icon: "🟨", keys: ["yellow cards", "red cards"] },
+  Advanced:   { icon: "📊", keys: ["expected_goals", "xg", "big chances"] },
+};
+
+function matchesCat(statName: string, keys: string[]): boolean {
+  const lower = statName.toLowerCase();
+  return keys.some((k) => lower.includes(k));
+}
+
 function StatsTab({ stats, match, isLive }: { stats: MatchStat[]; match: NormalizedMatch; isLive: boolean }) {
+  const [activeCat, setActiveCat] = useState<string>("All");
+
   if (stats.length === 0) {
     return (
       <Empty>
@@ -209,24 +224,71 @@ function StatsTab({ stats, match, isLive }: { stats: MatchStat[]; match: Normali
     );
   }
 
+  // Only surface categories that have at least one matching stat
+  const availableCats = Object.entries(STAT_CATEGORIES).filter(([, { keys }]) =>
+    stats.some((s) => matchesCat(s.name, keys))
+  );
+
+  const filteredStats = activeCat === "All"
+    ? stats.slice(0, 8)
+    : stats.filter((s) => matchesCat(s.name, STAT_CATEGORIES[activeCat].keys)).slice(0, 8);
+
   return (
     <div className="rounded-2xl overflow-hidden card-border-bold bg-white">
-      {/* Column headers */}
-      <div className="grid grid-cols-3 px-4 py-3 bg-surface-container border-b-4 border-on-surface">
-        <span className="barlow text-[10px] font-bold tracking-widest uppercase text-on-surface-variant truncate">
-          {match.homeTeam.name}
-        </span>
-        <span className="barlow text-[10px] font-bold tracking-widest uppercase text-on-surface-variant text-center">
-          STAT
-        </span>
-        <span className="barlow text-[10px] font-bold tracking-widest uppercase text-on-surface-variant text-right truncate">
-          {match.awayTeam.name}
-        </span>
+      {/* Category pills + team headers in one header block */}
+      <div className="bg-surface-container border-b-4 border-on-surface">
+        {/* Pills row */}
+        <div className="flex items-center gap-2 px-4 pt-3 pb-2 overflow-x-auto nobar">
+          <button
+            onClick={() => setActiveCat("All")}
+            className={`shrink-0 barlow text-[10px] font-bold tracking-widest uppercase px-3 py-1.5
+              rounded-full transition-all border-2 border-on-surface
+              ${activeCat === "All"
+                ? "bg-on-surface text-surface shadow-[2px_2px_0_0_rgba(0,0,0,0.3)]"
+                : "bg-surface text-on-surface-variant hover:bg-surface-container-high"
+              }`}
+          >
+            All
+          </button>
+          {availableCats.map(([cat, { icon }]) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCat(cat)}
+              className={`shrink-0 barlow text-[10px] font-bold tracking-widest uppercase px-3 py-1.5
+                rounded-full transition-all border-2 border-on-surface flex items-center gap-1
+                ${activeCat === cat
+                  ? "bg-primary text-on-primary shadow-[2px_2px_0_0_#1a1c1c]"
+                  : "bg-surface text-on-surface-variant hover:bg-surface-container-high"
+                }`}
+            >
+              <span>{icon}</span> {cat}
+            </button>
+          ))}
+        </div>
+        {/* Team name headers */}
+        <div className="grid grid-cols-3 px-4 py-2">
+          <span className="barlow text-[10px] font-bold tracking-widest uppercase text-on-surface-variant truncate">
+            {match.homeTeam.name}
+          </span>
+          <span className="barlow text-[10px] font-bold tracking-widest uppercase text-on-surface-variant text-center">
+            STAT
+          </span>
+          <span className="barlow text-[10px] font-bold tracking-widest uppercase text-on-surface-variant text-right truncate">
+            {match.awayTeam.name}
+          </span>
+        </div>
       </div>
+
       <div className="flex flex-col">
-        {stats.map((s, i) => (
-          <StatRow key={i} stat={s} isLast={i === stats.length - 1} />
-        ))}
+        {filteredStats.length === 0 ? (
+          <p className="text-center py-8 text-sm text-on-surface-variant">
+            No data for this category yet.
+          </p>
+        ) : (
+          filteredStats.map((s, i) => (
+            <StatRow key={i} stat={s} isLast={i === filteredStats.length - 1} />
+          ))
+        )}
       </div>
     </div>
   );

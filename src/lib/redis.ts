@@ -16,7 +16,7 @@ function memSet<T>(key: string, data: T, ttlSec: number): void {
   // Evict expired entries when map grows large
   if (mem.size > 500) {
     const now = Date.now();
-    for (const [k, v] of mem.entries()) {
+    for (const [k, v] of Array.from(mem.entries())) {
       if (now > v.exp) mem.delete(k);
     }
   }

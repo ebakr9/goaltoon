@@ -179,7 +179,7 @@ export default async function MatchPage({ params }: Props) {
                         {ge.minute}{ge.extraMinute ? `+${ge.extraMinute}` : ""}′
                       </span>
                       <span className="font-montserrat font-black text-sm italic uppercase
-                        tracking-tight text-primary truncate">
+                        tracking-tight text-primary truncate pr-1">
                         {ge.player}
                       </span>
                     </div>
