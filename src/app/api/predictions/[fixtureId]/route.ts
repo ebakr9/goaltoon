@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(_req: NextRequest, { params }: { params: { fixtureId: string } }) {
   const { fixtureId } = params;
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("predictions")
     .select("pick")
     .eq("fixture_id", fixtureId);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    const { error } = await supabaseAdmin
+    const db = getSupabaseAdmin();
+    const { error } = await db
       .from("predictions")
       .insert({ fixture_id: String(fixtureId), pick });
 
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Return updated counts immediately after insert
-    const { data, error: countError } = await supabaseAdmin
+    const { data, error: countError } = await db
       .from("predictions")
       .select("pick")
       .eq("fixture_id", String(fixtureId));
