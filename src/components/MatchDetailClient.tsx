@@ -44,20 +44,21 @@ export default function MatchDetailClient({ match: initial, events: ie, stats: i
   return (
     <div className="space-y-6">
 
+      <h3 className="font-montserrat font-black text-3xl text-on-surface
+        border-b-4 border-primary inline-block pb-1 w-max">
+        Match Dashboard
+      </h3>
+
       {/* ── Dashboard grid: Stats (left 8) + Events (right 4) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
         {/* Stats — shown second on mobile, first on desktop */}
-        <section className="lg:col-span-8 flex flex-col gap-3 order-2 lg:order-1">
-          <h3 className="font-montserrat font-black text-3xl text-on-surface
-            border-b-4 border-primary inline-block pb-1 w-max">
-            Match Dashboard
-          </h3>
+        <section className="lg:col-span-8 order-2 lg:order-1">
           <StatsTab stats={stats} match={match} isLive={isLive} />
         </section>
 
         {/* Events — shown first on mobile (most dynamic), right on desktop, sticky on scroll */}
-        <aside className="lg:col-span-4 order-1 lg:order-2 lg:sticky lg:top-[88px] self-start">
+        <aside className="lg:col-span-4 order-1 lg:order-2">
           <div className="rounded-2xl card-border-bold overflow-hidden">
             {/* Green header */}
             <div className="flex items-center gap-2.5 px-5 py-4 bg-primary text-on-primary
@@ -73,8 +74,8 @@ export default function MatchDetailClient({ match: initial, events: ie, stats: i
                 </span>
               )}
             </div>
-            {/* Fixed height = ~4 events visible, scroll for the rest */}
-            <div className="overflow-y-auto" style={{ maxHeight: 380 }}>
+            {/* Fixed height = ~7 events visible, scroll for the rest */}
+            <div className="overflow-y-auto" style={{ maxHeight: 600 }}>
               <EventsTab events={events} match={match} isLive={isLive} />
             </div>
           </div>
