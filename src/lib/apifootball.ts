@@ -297,6 +297,68 @@ export async function fetchFixtureStats(id: string): Promise<MatchStat[]> {
 /**
  * Starting lineups and substitutes for both teams.
  */
+// ─── Standings types ──────────────────────────────────────────────────────────
+
+interface AFStandingEntry {
+  rank: number;
+  team: { id: number; name: string; logo: string };
+  points: number;
+  goalsDiff: number;
+  group: string;
+  all: { played: number; win: number; draw: number; lose: number; goals: { for: number; against: number } };
+}
+
+interface AFStandingsLeague {
+  league: { standings: AFStandingEntry[][] };
+}
+
+export interface StandingEntry {
+  rank: number;
+  teamId: string;
+  teamName: string;
+  teamLogo: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDiff: number;
+  points: number;
+}
+
+export interface GroupStanding {
+  name: string;
+  teams: StandingEntry[];
+}
+
+export async function fetchStandings(leagueId: string, season: number): Promise<GroupStanding[]> {
+  const raw = await apiFetch<AFStandingsLeague[]>(`/standings?league=${leagueId}&season=${season}`);
+  if (!raw || raw.length === 0) return [];
+  const groups: GroupStanding[] = [];
+  for (const group of raw[0].league.standings) {
+    if (group.length === 0) continue;
+    groups.push({
+      name: group[0].group,
+      teams: group.map((e) => ({
+        rank: e.rank,
+        teamId: String(e.team.id),
+        teamName: e.team.name,
+        teamLogo: e.team.logo,
+        played: e.all.played,
+        won: e.all.win,
+        drawn: e.all.draw,
+        lost: e.all.lose,
+        goalsFor: e.all.goals.for,
+        goalsAgainst: e.all.goals.against,
+        goalDiff: e.goalsDiff,
+        points: e.points,
+      })),
+    });
+  }
+  return groups.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export async function fetchFixtureLineups(id: string): Promise<MatchLineup[]> {
   const raw = await apiFetch<AFLineupRaw[]>(`/fixtures/lineups?fixture=${id}`);
   if (!raw) return [];
