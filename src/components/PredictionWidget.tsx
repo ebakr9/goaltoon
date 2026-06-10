@@ -16,6 +16,16 @@ interface Props {
 
 const STORAGE_KEY = (id: string) => `goaltoon_pred_${id}`;
 
+// Migrate legacy "home"/"draw"/"away" values to "1"/"x"/"2"
+function normalizePick(v: string | null): string | null {
+  if (!v) return null;
+  if (v === "home") return "1";
+  if (v === "draw") return "x";
+  if (v === "away") return "2";
+  if (v === "1" || v === "x" || v === "2") return v;
+  return null;
+}
+
 export default function PredictionWidget({ fixtureId, homeTeam, awayTeam }: Props) {
   const [voted, setVoted]   = useState<string | null>(null);
   const [counts, setCounts] = useState<Counts>({ "1": 0, x: 0, "2": 0 });
@@ -24,8 +34,12 @@ export default function PredictionWidget({ fixtureId, homeTeam, awayTeam }: Prop
 
   // On mount: check localStorage for prior vote + fetch current counts
   useEffect(() => {
-    const prior = localStorage.getItem(STORAGE_KEY(fixtureId));
-    if (prior) setVoted(prior);
+    const raw = localStorage.getItem(STORAGE_KEY(fixtureId));
+    const normalized = normalizePick(raw);
+    if (normalized) {
+      setVoted(normalized);
+      if (raw !== normalized) localStorage.setItem(STORAGE_KEY(fixtureId), normalized);
+    }
 
     fetch(`/api/predictions/${fixtureId}`)
       .then((r) => r.json())

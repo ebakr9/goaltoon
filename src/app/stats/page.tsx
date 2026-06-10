@@ -168,22 +168,24 @@ export default async function StatsPage() {
             </div>
             {mostGoalsFor.length === 0 ? <EmptyState /> : (
               <ul className="flex flex-col gap-2">
-                {mostGoalsFor.map((t, i) => {
-                  const flag = getCountryConfig(t.teamName).flag;
-                  return (
-                    <li key={t.teamId}
-                      className="flex justify-between items-center bg-surface-bright p-3 rounded border border-surface-container-highest">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-on-surface-variant w-4 text-center shrink-0">{i + 1}</span>
-                        <span className="text-lg">{flag}</span>
-                        <span className="font-bold text-sm text-on-background truncate">{t.teamName}</span>
+                {mostGoalsFor.map((t, i) => (
+                  <li key={t.teamId}
+                    className="flex justify-between items-center bg-surface-bright p-3 rounded border border-surface-container-highest">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-on-surface-variant w-4 text-center shrink-0">{i + 1}</span>
+                      <div className="w-7 h-7 rounded-full border-2 border-outline-variant bg-surface-container shrink-0 overflow-hidden flex items-center justify-center">
+                        {t.teamLogo
+                          ? <Image src={t.teamLogo} alt={t.teamName} width={28} height={28} className="w-full h-full object-contain scale-[1.8]" unoptimized />
+                          : <span className="text-xs font-black text-on-surface-variant">{t.teamName.slice(0, 2).toUpperCase()}</span>
+                        }
                       </div>
-                      <span className={`font-montserrat font-black text-xl ${i === 0 ? "text-primary" : "text-on-background"}`}>
-                        {t.goalsFor}
-                      </span>
-                    </li>
-                  );
-                })}
+                      <span className="font-bold text-sm text-on-background truncate">{t.teamName}</span>
+                    </div>
+                    <span className={`font-montserrat font-black text-xl ${i === 0 ? "text-primary" : "text-on-background"}`}>
+                      {t.goalsFor}
+                    </span>
+                  </li>
+                ))}
               </ul>
             )}
           </section>
@@ -196,22 +198,24 @@ export default async function StatsPage() {
             </div>
             {mostGoalsAgainst.length === 0 ? <EmptyState /> : (
               <ul className="flex flex-col gap-2">
-                {mostGoalsAgainst.map((t, i) => {
-                  const flag = getCountryConfig(t.teamName).flag;
-                  return (
-                    <li key={t.teamId}
-                      className="flex justify-between items-center bg-surface-bright p-3 rounded border border-surface-container-highest">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-on-surface-variant w-4 text-center shrink-0">{i + 1}</span>
-                        <span className="text-lg">{flag}</span>
-                        <span className="font-bold text-sm text-on-background truncate">{t.teamName}</span>
+                {mostGoalsAgainst.map((t, i) => (
+                  <li key={t.teamId}
+                    className="flex justify-between items-center bg-surface-bright p-3 rounded border border-surface-container-highest">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-on-surface-variant w-4 text-center shrink-0">{i + 1}</span>
+                      <div className="w-7 h-7 rounded-full border-2 border-outline-variant bg-surface-container shrink-0 overflow-hidden flex items-center justify-center">
+                        {t.teamLogo
+                          ? <Image src={t.teamLogo} alt={t.teamName} width={28} height={28} className="w-full h-full object-contain scale-[1.8]" unoptimized />
+                          : <span className="text-xs font-black text-on-surface-variant">{t.teamName.slice(0, 2).toUpperCase()}</span>
+                        }
                       </div>
-                      <span className={`font-montserrat font-black text-xl ${i === 0 ? "text-error" : "text-on-background"}`}>
-                        {t.goalsAgainst}
-                      </span>
-                    </li>
-                  );
-                })}
+                      <span className="font-bold text-sm text-on-background truncate">{t.teamName}</span>
+                    </div>
+                    <span className={`font-montserrat font-black text-xl ${i === 0 ? "text-error" : "text-on-background"}`}>
+                      {t.goalsAgainst}
+                    </span>
+                  </li>
+                ))}
               </ul>
             )}
           </section>

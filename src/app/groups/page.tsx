@@ -35,7 +35,9 @@ export default async function GroupsPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {groups.map((g) => (
+            {groups
+              .filter((g) => !/third|3rd|best/i.test(g.name))
+              .map((g) => (
               <GroupCard
                 key={g.name}
                 group={g}
@@ -107,7 +109,7 @@ function TeamRow({ team, isLast }: { team: StandingEntry; isLast: boolean }) {
         </div>
         <span className="font-bold text-sm text-on-surface truncate">{team.teamName}</span>
       </div>
-      <div className="flex gap-3 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         {[team.played, team.won, team.drawn, team.lost].map((v, i) => (
           <span key={i} className="barlow text-sm font-bold text-on-surface-variant w-5 text-center tabular-nums">
             {v}
@@ -115,6 +117,10 @@ function TeamRow({ team, isLast }: { team: StandingEntry; isLast: boolean }) {
         ))}
         <span className="barlow text-sm font-black text-on-surface w-5 text-center tabular-nums">
           {team.points}
+        </span>
+        {/* invisible spacer matching the arrow_forward icon in the header */}
+        <span className="material-symbols-outlined opacity-0 text-base ml-1 pointer-events-none select-none" aria-hidden="true">
+          arrow_forward
         </span>
       </div>
     </div>
