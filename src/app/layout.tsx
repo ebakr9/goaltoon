@@ -3,8 +3,8 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Goaltoon · FIFA World Cup 2026",
-  description: "Live scores, fixtures and results — FIFA World Cup 2026.",
+  title: "Goaltoon – Independent Football Scores & Match Statistics",
+  description: "Live scores, fixtures, events and match statistics for football leagues and international tournaments.",
   icons: { icon: "/favicon.ico" },
 };
 
@@ -101,7 +101,12 @@ function SiteFooter() {
             Goaltoon
           </span>
           <p className="text-sm text-on-surface-variant">
-            © 2026 Goaltoon. All Rights Reserved. Not affiliated with FIFA.
+            © 2026 Goaltoon. All Rights Reserved.
+          </p>
+          <p className="text-xs text-on-surface-variant/70 leading-relaxed max-w-sm">
+            Goaltoon is an independent football scores and statistics platform.
+            Goaltoon is not affiliated with, endorsed by, sponsored by, or connected
+            with FIFA, the FIFA World Cup, Goal.com, or any official tournament organiser.
           </p>
         </div>
         <div className="flex flex-wrap justify-center md:justify-end gap-6 items-center">

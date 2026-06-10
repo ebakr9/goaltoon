@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// World Cup 2026 opening match — June 11 2026 at 20:00 UTC
+// International football opening match — June 11 2026 at 20:00 UTC
 const TARGET = new Date("2026-06-11T20:00:00Z").getTime();
 
 interface TimeLeft { days: number; hours: number; mins: number; secs: number }

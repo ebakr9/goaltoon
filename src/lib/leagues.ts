@@ -1,6 +1,6 @@
 // Central league configuration — add/remove leagues here only.
 // id = API-Football league ID (string "all" for the aggregate view).
-// featured = true → gold/highlight treatment in the UI (e.g. World Cup).
+// featured = true → gold/highlight treatment in the UI (e.g. major tournaments).
 // season = the active season year for this league.
 
 export interface League {

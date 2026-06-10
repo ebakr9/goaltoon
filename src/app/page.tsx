@@ -84,9 +84,9 @@ function FeaturedCard({ match }: { match: NormalizedMatch | null }) {
           <span className="w-2 h-2 rounded-full bg-primary pulse-dot" />
           <span className="text-sm font-bold text-primary uppercase tracking-widest">Coming Soon</span>
         </div>
-        <div className="font-montserrat font-black text-on-surface text-2xl">World Cup 2026</div>
+        <div className="font-montserrat font-black text-on-surface text-2xl">Live Football Returns</div>
         <p className="text-sm text-on-surface-variant">
-          Opening match kicks off June 11, 2026. Check back then for live scores.
+          International football kicks off June 11, 2026. Check back then for live scores.
         </p>
         <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full border border-primary/30
           bg-primary/5 text-primary text-sm font-bold">
