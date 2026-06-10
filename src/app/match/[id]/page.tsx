@@ -9,6 +9,8 @@ import {
 import { getCountryConfig } from "@/lib/countries";
 import MatchDetailClient from "@/components/MatchDetailClient";
 import PredictionWidget from "@/components/PredictionWidget";
+import MatchCountdown from "@/components/MatchCountdown";
+import LocalTime from "@/components/LocalTime";
 
 interface Props { params: { id: string } }
 
@@ -93,7 +95,7 @@ export default async function MatchPage({ params }: Props) {
             ) : (
               <span className="barlow text-xs font-bold uppercase tracking-widest px-3.5 py-1.5
                 rounded-full bg-surface text-on-surface-variant border-2 border-on-surface">
-                {match.time} UTC
+                <LocalTime timestamp={match.timestamp} />
               </span>
             )}
 
@@ -106,6 +108,11 @@ export default async function MatchPage({ params }: Props) {
                   : "vs"}
               </div>
             </div>
+
+            {/* Countdown — upcoming only */}
+            {!isLive && !isDone && match.timestamp > 0 && (
+              <MatchCountdown timestamp={match.timestamp} />
+            )}
 
             {/* Meta */}
             <div className="flex flex-col items-center gap-1">

@@ -88,8 +88,14 @@ export default function MatchCard({ match }: { match: NormalizedMatch }) {
                   </span>
                 ) : (
                   <div className="flex flex-col items-center">
-                    <span className="font-montserrat font-bold text-xl text-primary">{match.time || "TBD"}</span>
-                    <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">UTC</span>
+                    <span className="font-montserrat font-bold text-xl text-primary">
+                      {match.timestamp
+                        ? new Date(match.timestamp * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : match.time || "TBD"}
+                    </span>
+                    <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                      {Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, " ")}
+                    </span>
                   </div>
                 )}
                 <span className="text-[10px] text-on-surface-variant mt-1">{match.date}</span>

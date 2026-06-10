@@ -185,7 +185,7 @@ async function apiFetch<T>(path: string): Promise<T | null> {
 // ─── Normalization ────────────────────────────────────────────────────────────
 
 const LIVE_STATUSES  = new Set(["1H", "HT", "2H", "ET", "BT", "P", "SUSP", "INT", "LIVE"]);
-const DONE_STATUSES  = new Set(["FT", "AET", "PEN"]);
+const DONE_STATUSES  = new Set(["FT", "AET", "PEN", "AWD", "WO", "CANC", "ABD", "PST"]);
 
 function normalizeStatus(short: string): NormalizedMatch["status"] {
   if (LIVE_STATUSES.has(short)) return "live";
@@ -457,14 +457,14 @@ export async function fetchFixtureLineups(id: string): Promise<MatchLineup[]> {
     teamName: l.team.name,
     teamLogo: l.team.logo || undefined,
     formation: l.formation,
-    startXI: l.startXI.map((p) => ({
+    startXI: (l.startXI ?? []).map((p) => ({
       id: p.player.id,
       name: p.player.name,
       number: p.player.number,
       position: p.player.pos,
       grid: p.player.grid,
     })),
-    substitutes: l.substitutes.map((p) => ({
+    substitutes: (l.substitutes ?? []).map((p) => ({
       id: p.player.id,
       name: p.player.name,
       number: p.player.number,

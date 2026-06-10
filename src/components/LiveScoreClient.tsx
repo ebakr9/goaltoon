@@ -14,11 +14,15 @@ interface MatchData {
   fetchedAt: number;
 }
 
-const today  = () => new Date().toISOString().slice(0, 10);
-const offset = (n: number) => {
-  const d = new Date(); d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+const toISO = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 };
+const today  = () => toISO(new Date());
+const offset = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return toISO(d); };
+
 
 export default function LiveScoreClient({ initial }: { initial: MatchData }) {
   const [data, setData]           = useState<MatchData>(initial);
@@ -52,14 +56,17 @@ export default function LiveScoreClient({ initial }: { initial: MatchData }) {
   const changeDate   = (d: string) => { setSelDate(d);   load(d, selLeague); };
   const changeLeague = (l: string) => { setSelLeague(l); load(selDate, l);   };
 
-  const isStale = data.date !== selDate || data.leagueId !== selLeague;
-  const total   = data.live.length + data.upcoming.length + data.finished.length;
+  const isStale  = data.date !== selDate || data.leagueId !== selLeague;
+  const total    = data.live.length + data.upcoming.length + data.finished.length;
+  const todayISO  = today();
+  const datePickerRef = useRef<HTMLInputElement>(null);
 
-  const QUICK = [
-    { label: "Yesterday", val: offset(-1) },
-    { label: "Today",     val: today()    },
-    { label: "Tomorrow",  val: offset(1)  },
-  ];
+  // Build -2..+2 window centered on selDate
+  const dateRange = Array.from({ length: 5 }, (_, i) => {
+    const d = new Date(selDate + "T00:00:00");
+    d.setDate(d.getDate() + (i - 2));
+    return toISO(d);
+  });
 
   return (
     <div>
@@ -97,55 +104,92 @@ export default function LiveScoreClient({ initial }: { initial: MatchData }) {
           </div>
         </div>
 
-        {/* Date + refresh row */}
-        <div className="px-5 py-4 flex items-center gap-3 flex-wrap bg-surface-container-low">
-          <p className="text-xs font-bold tracking-[.2em] uppercase text-on-surface-variant">Date</p>
-
-          <div className="flex gap-1">
-            {QUICK.map((q) => {
-              const active = selDate === q.val;
-              return (
-                <button key={q.label} onClick={() => changeDate(q.val)}
-                  className="px-3 py-1.5 rounded text-xs font-bold tracking-wide transition-all"
-                  style={{
-                    background: active ? "#006d37" : "#eeeeee",
-                    border:     `2px solid ${active ? "#2ecc71" : "#bbcbbb"}`,
-                    color:      active ? "#ffffff" : "#6c7b6d",
-                    transform:  active ? "translateY(-1px)" : "none",
-                  }}>
-                  {q.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="w-px h-4 bg-outline-variant" />
-
-          <input type="date" value={selDate}
-            onChange={(e) => e.target.value && changeDate(e.target.value)}
-            className="text-xs font-medium px-2.5 py-1.5 rounded outline-none border-2 border-outline-variant
-              bg-white text-on-surface"
-            style={{ fontFamily: "inherit" }} />
-
-          <div className="flex-1" />
-
-          {/* Status */}
+        {/* Date strip */}
+        <div className="px-5 py-3 bg-surface-container-low border-b-2 border-outline-variant">
           <div className="flex items-center gap-2">
-            {loading ? (
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                <span className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin inline-block" />
-                Loading…
-              </span>
-            ) : (
-              <span className="text-xs tabular-nums text-on-surface-variant">
-                {updated
-                  ? updated.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-                  : "—"}
-              </span>
-            )}
-            <button onClick={() => load(selDate, selLeague)} disabled={loading}
-              className="text-lg transition-colors disabled:opacity-30 text-on-surface-variant hover:text-primary"
-              title="Refresh">↻</button>
+
+            {/* ← prev day */}
+            <button
+              onClick={() => { const d = new Date(selDate + "T00:00:00"); d.setDate(d.getDate() - 1); changeDate(toISO(d)); }}
+              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border-2 border-outline-variant
+                bg-white text-on-surface-variant hover:border-primary hover:text-primary transition-all">
+              <span className="material-symbols-outlined text-base">chevron_left</span>
+            </button>
+
+            {/* 5-day strip — always selDate at index 2 (center) */}
+            <div className="grid grid-cols-5 gap-1.5 flex-1">
+              {dateRange.map((iso) => {
+                const d       = new Date(iso + "T00:00:00");
+                const isToday = iso === todayISO;
+                const active  = iso === selDate;
+                const dayName = d.toLocaleDateString("en-GB", { weekday: "short" });
+                const dayNum  = d.getDate();
+                const month   = d.toLocaleDateString("en-GB", { month: "short" });
+
+                return (
+                  <button key={iso} onClick={() => changeDate(iso)}
+                    className="flex flex-col items-center px-2 py-2 rounded-xl border-2 transition-all duration-150 w-full"
+                    style={{
+                      background:  active ? "#006d37" : "#fff",
+                      borderColor: active ? "#2ecc71" : isToday ? "#006d37" : "#d4d4d4",
+                      color:       active ? "#fff"    : isToday ? "#006d37" : "#6c7b6d",
+                      transform:   active ? "translateY(-2px)" : "none",
+                      boxShadow:   active ? "2px 2px 0 #1a1c1c" : "none",
+                    }}>
+                    <span className="text-[10px] font-bold uppercase tracking-wide leading-none">
+                      {isToday ? "Today" : dayName}
+                    </span>
+                    <span className="font-montserrat font-black text-lg leading-tight tabular-nums">
+                      {dayNum}
+                    </span>
+                    <span className="text-[9px] font-semibold uppercase leading-none opacity-70">
+                      {month}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* → next day */}
+            <button
+              onClick={() => { const d = new Date(selDate + "T00:00:00"); d.setDate(d.getDate() + 1); changeDate(toISO(d)); }}
+              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border-2 border-outline-variant
+                bg-white text-on-surface-variant hover:border-primary hover:text-primary transition-all">
+              <span className="material-symbols-outlined text-base">chevron_right</span>
+            </button>
+
+            {/* Calendar picker */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => datePickerRef.current?.showPicker()}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border-2 border-outline-variant
+                  bg-white text-on-surface-variant hover:border-primary hover:text-primary transition-all"
+                title="Pick a date">
+                <span className="material-symbols-outlined text-base">calendar_month</span>
+              </button>
+              <input
+                ref={datePickerRef}
+                type="date"
+                value={selDate}
+                onChange={(e) => e.target.value && changeDate(e.target.value)}
+                className="absolute opacity-0 pointer-events-none w-0 h-0 top-0 left-0"
+                tabIndex={-1}
+              />
+            </div>
+
+            {/* Refresh */}
+            <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l-2 border-outline-variant">
+              {loading ? (
+                <span className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              ) : (
+                <span className="text-[10px] tabular-nums text-on-surface-variant">
+                  {updated ? updated.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—"}
+                </span>
+              )}
+              <button onClick={() => load(selDate, selLeague)} disabled={loading}
+                className="text-xl transition-colors disabled:opacity-30 text-on-surface-variant hover:text-primary"
+                title="Refresh">↻</button>
+            </div>
           </div>
         </div>
       </div>
