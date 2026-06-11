@@ -35,7 +35,7 @@ export default async function GroupsPage() {
       ) : (
         <>
           {(() => {
-            const realGroups = groups.filter((g) => g.teams.length <= 6);
+            const realGroups = groups.filter((g) => g.teams.length === 4);
             return (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">

@@ -339,7 +339,7 @@ export async function fetchStandings(leagueId: string, season: number): Promise<
   for (const group of raw[0].league.standings) {
     if (group.length === 0) continue;
     groups.push({
-      name: group[0].group,
+      name: group[0].group.replace(/^Group Stage\s*-\s*/i, "").trim(),
       teams: group.map((e) => ({
         rank: e.rank,
         teamId: String(e.team.id),
