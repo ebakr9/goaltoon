@@ -32,7 +32,9 @@ export default async function GroupDetailPage({ params }: { params: { slug: stri
     if (groups.length > 0) await setCached(cacheKey, groups, 300);
   }
 
-  const group = groups.find((g) => g.name.toLowerCase() === groupName.toLowerCase());
+  const group = groups.find(
+    (g) => g.name.toLowerCase().replace(/\s+/g, "-") === params.slug.toLowerCase()
+  );
   if (!group) notFound();
 
   // Fetch upcoming fixtures for the league, filter to this group's teams

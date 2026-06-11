@@ -34,19 +34,23 @@ export default async function GroupsPage() {
         <EmptyState />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {groups
-              .filter((g) => !/third|3rd|best/i.test(g.name))
-              .map((g) => (
-              <GroupCard
-                key={g.name}
-                group={g}
-                slug={encodeURIComponent(g.name.toLowerCase().replace(/\s+/g, "-"))}
-              />
-            ))}
-          </div>
-
-          <BestThirdsTable groups={groups} />
+          {(() => {
+            const realGroups = groups.filter((g) => g.teams.length <= 6);
+            return (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {realGroups.map((g) => (
+                    <GroupCard
+                      key={g.name}
+                      group={g}
+                      slug={g.name.toLowerCase().replace(/\s+/g, "-")}
+                    />
+                  ))}
+                </div>
+                <BestThirdsTable groups={realGroups} />
+              </>
+            );
+          })()}
         </>
       )}
     </div>
