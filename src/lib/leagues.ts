@@ -14,15 +14,7 @@ export interface League {
 }
 
 export const LEAGUES: League[] = [
-  { id: "all",  name: "All",              flag: "⚽",  group: "all",           season: 2025 },
-  { id: "1",    name: "World Cup",        flag: "🏆",  group: "international", season: 2026, featured: true },
-  { id: "10",   name: "Friendlies",       flag: "🤝",  group: "international", season: 2026 },
-  { id: "39",   name: "Premier League",   flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", group: "domestic",      season: 2024 },
-  { id: "140",  name: "La Liga",          flag: "🇪🇸", group: "domestic",      season: 2024 },
-  { id: "135",  name: "Serie A",          flag: "🇮🇹", group: "domestic",      season: 2024 },
-  { id: "78",   name: "Bundesliga",       flag: "🇩🇪", group: "domestic",      season: 2024 },
-  { id: "61",   name: "Ligue 1",          flag: "🇫🇷", group: "domestic",      season: 2024 },
-  { id: "2",    name: "Champions League", flag: "⭐",  group: "european",      season: 2024 },
+  { id: "1", name: "World Cup", flag: "🏆", group: "international", season: 2026, featured: true },
 ];
 
 export function getLeague(id: string): League | undefined {

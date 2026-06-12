@@ -5,9 +5,10 @@ import { useRef, useEffect } from "react";
 import { DotLottie, DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 const NAV_LINKS = [
-  { label: "Home",   href: "/" },
-  { label: "Groups", href: "/groups" },
-  { label: "Stats",  href: "/stats" },
+  { label: "Home",    href: "/" },
+  { label: "Groups",  href: "/groups" },
+  { label: "Stats",   href: "/stats" },
+  { label: "History", href: "/history" },
 ];
 
 export default function TopNav() {
