@@ -2,7 +2,6 @@ import Image from "next/image";
 import { fetchFixturesByDate, NormalizedMatch } from "@/lib/apifootball";
 import { LEAGUE_IDS } from "@/lib/leagues";
 import LiveScoreClient from "@/components/LiveScoreClient";
-import HeroCountdown from "@/components/HeroCountdown";
 import LocalTime from "@/components/LocalTime";
 
 export const revalidate = 60;
@@ -59,7 +58,12 @@ export default async function HomePage({ searchParams }: { searchParams: { date?
               Unapologetically bold stats for the true fans.
             </p>
 
-            <HeroCountdown />
+            <img
+              src="/players.png"
+              alt="World Cup Players"
+              className="w-full max-w-sm mx-auto md:mx-0 object-contain drop-shadow-xl"
+              style={{ imageRendering: "pixelated" }}
+            />
           </div>
 
           {/* Right: featured match card */}
