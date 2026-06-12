@@ -166,7 +166,7 @@ export default function TournamentDetailPage({ params }: { params: { season: str
       {/* Hero header */}
       <div className="card-border-bold rounded-2xl overflow-hidden">
         <div className="pitch-pattern-dense px-8 py-8 flex flex-col gap-4">
-          <p className="text-white/50 text-xs font-bold uppercase tracking-widest">{t.host} · FIFA World Cup</p>
+          <p className="text-white/50 text-xs font-bold uppercase tracking-widest">{t.host}</p>
           <div className="flex items-center gap-5">
             <span className="font-montserrat font-black text-7xl text-white/20 leading-none">{t.season}</span>
             <div className="flex flex-col gap-2">
