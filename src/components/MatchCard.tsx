@@ -8,7 +8,7 @@ import { getLeague } from "@/lib/leagues";
 import PredictionButtons from "./PredictionButtons";
 import GoalAnimation from "./GoalAnimation";
 
-export default function MatchCard({ match }: { match: NormalizedMatch }) {
+export default function MatchCard({ match, date }: { match: NormalizedMatch; date?: string }) {
   const prev  = useRef({ h: match.score.home, a: match.score.away });
   const [goal, setGoal] = useState<string | null>(null);
   const [hPop, setHPop] = useState(false);
@@ -34,7 +34,7 @@ export default function MatchCard({ match }: { match: NormalizedMatch }) {
     <>
       {goal && <GoalAnimation teamName={goal} onDone={() => setGoal(null)} />}
 
-      <Link href={`/match/${match.id}`} className="block group">
+      <Link href={`/match/${match.id}${date ? `?date=${date}` : ""}`} className="block group">
         <article
           className="card-flat rounded-xl flex flex-col relative overflow-hidden
             transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.15)]"

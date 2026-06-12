@@ -203,17 +203,17 @@ export default function LiveScoreClient({ initial }: { initial: MatchData }) {
         {data.live.length > 0 && (
           <MatchSection label="Live Action" count={data.live.length} dot>
             <p className="text-sm text-on-surface-variant mb-4">Don&apos;t blink. The pitch is hot.</p>
-            <Grid matches={data.live} />
+            <Grid matches={data.live} date={selDate} />
           </MatchSection>
         )}
         {data.upcoming.length > 0 && (
           <MatchSection label="Upcoming Fixtures" count={data.upcoming.length}>
-            <Grid matches={data.upcoming} />
+            <Grid matches={data.upcoming} date={selDate} />
           </MatchSection>
         )}
         {data.finished.length > 0 && (
           <MatchSection label="Results" count={data.finished.length}>
-            <Grid matches={data.finished} />
+            <Grid matches={data.finished} date={selDate} />
           </MatchSection>
         )}
 
@@ -262,10 +262,10 @@ function MatchSection({ label, count, dot, children }:
   );
 }
 
-function Grid({ matches }: { matches: NormalizedMatch[] }) {
+function Grid({ matches, date }: { matches: NormalizedMatch[]; date: string }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {matches.map((m) => <MatchCard key={m.id} match={m} />)}
+      {matches.map((m) => <MatchCard key={m.id} match={m} date={date} />)}
     </div>
   );
 }

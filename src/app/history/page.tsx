@@ -18,27 +18,27 @@ export default function HistoryPage() {
         <h1 className="font-montserrat font-black text-5xl md:text-6xl text-on-background leading-none">
           Tournament History
         </h1>
-        <p className="text-sm text-on-surface-variant mt-3">1998 – 2022</p>
+        <p className="text-sm text-on-surface-variant mt-3">1966 – 2022</p>
       </header>
 
-      <div className="flex flex-wrap gap-3">
-        {TOURNAMENTS.map((t) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {[...TOURNAMENTS].sort((a, b) => b.season - a.season).map((t) => (
           <Link
             key={t.season}
             href={`/history/${t.season}`}
             className="card-border-bold rounded-xl overflow-hidden group block"
           >
             <div className="pitch-pattern-dense px-5 py-4 flex items-center gap-3">
-              <span className="font-montserrat font-black text-2xl text-white leading-none">{t.season}</span>
-              <div className="w-px h-6 bg-white/20" />
-              <span className="text-white/60 text-xs font-bold">{t.host}</span>
-              <div className="w-px h-6 bg-white/20" />
+              <span className="font-montserrat font-black text-2xl text-white leading-none shrink-0">{t.season}</span>
+              <div className="w-px h-6 bg-white/20 shrink-0" />
+              <span className="text-white/60 text-xs font-bold truncate min-w-0">{t.host}</span>
+              <div className="w-px h-6 bg-white/20 shrink-0" />
               <div className="w-7 h-7 rounded-full border-2 border-white/30 bg-white/10 overflow-hidden shrink-0 flex items-center justify-center">
                 <Image src={t.winnerLogo} alt={t.winner} width={28} height={28}
                   className="w-full h-full object-contain scale-[1.8]" unoptimized />
               </div>
-              <span className="text-white text-sm font-bold">{t.winner}</span>
-              <span className="material-symbols-outlined text-white/30 text-base group-hover:translate-x-0.5 transition-transform">
+              <span className="text-white text-sm font-bold truncate min-w-0 flex-1">{t.winner}</span>
+              <span className="material-symbols-outlined text-white/30 text-base group-hover:translate-x-0.5 transition-transform shrink-0">
                 arrow_forward
               </span>
             </div>

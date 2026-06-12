@@ -21,7 +21,10 @@
       "Bash(python3 -m json.tool)",
       "Bash(curl -s \"https://www.thesportsdb.com/api/v1/json/123/lookuplineup.php?id=2279756\")",
       "Bash(curl -s -H \"x-apisports-key: eccec3ae15cc33754225d7e9b2f8a1d6\" \"https://v3.football.api-sports.io/fixtures?date=2026-06-09&timezone=UTC&league=10\")",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Friendlies today:', d.get\\('results',0\\)\\); [print\\(f\\\\\"{m['teams']['home']['name']} vs {m['teams']['away']['name']} | {m['fixture']['status']['short']}\\\\\"\\) for m in d.get\\('response',[]\\)[:5]]\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Friendlies today:', d.get\\('results',0\\)\\); [print\\(f\\\\\"{m['teams']['home']['name']} vs {m['teams']['away']['name']} | {m['fixture']['status']['short']}\\\\\"\\) for m in d.get\\('response',[]\\)[:5]]\")",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebSearch",
+      "WebFetch(domain:www.thesoccerworldcups.com)"
     ]
   }
 }

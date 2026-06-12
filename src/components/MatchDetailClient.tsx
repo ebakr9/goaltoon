@@ -18,22 +18,43 @@ interface DetailData {
 
 interface Props extends DetailData {}
 
+function countGoals(events: MatchEvent[]) {
+  return events.filter((e) => e.type === "Goal").length;
+}
+
 export default function MatchDetailClient({ match: initial, events: ie, stats: is, lineups: il }: Props) {
   const [data, setData] = useState<DetailData>({ match: initial, events: ie, stats: is, lineups: il });
   const intervalRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const goalCountRef    = useRef<number>(countGoals(ie));
+
+  const playGoalSound = useCallback(() => {
+    try {
+      const audio = new Audio("/sounds/goal.mp3");
+      audio.volume = 0.8;
+      audio.play().catch(() => { /* user hasn't interacted yet — browser blocks autoplay */ });
+    } catch { /* non-fatal */ }
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
       const res = await fetch(`/api/matches/${initial.id}`, { cache: "no-store" });
-      if (res.ok) setData(await res.json());
+      if (!res.ok) return;
+      const fresh: DetailData = await res.json();
+      const newGoalCount = countGoals(fresh.events);
+      if (newGoalCount > goalCountRef.current) {
+        playGoalSound();
+      }
+      goalCountRef.current = newGoalCount;
+      setData(fresh);
     } catch { /* non-fatal */ }
-  }, [initial.id]);
+  }, [initial.id, playGoalSound]);
 
   useEffect(() => {
     if (data.match.status !== "live") return;
     intervalRef.current = setInterval(refresh, 30_000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [data.match.status, refresh]);
+
 
   const { match, events, stats, lineups } = data;
   const isLive = match.status === "live";

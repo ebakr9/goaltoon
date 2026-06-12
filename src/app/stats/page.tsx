@@ -8,7 +8,18 @@ import {
   fetchStandings,
   PlayerStatEntry,
 } from "@/lib/apifootball";
-import { getCountryConfig } from "@/lib/countries";
+
+function TeamCircle({ logo, name, size = "sm" }: { logo: string; name: string; size?: "sm" | "md" }) {
+  const dim = size === "md" ? "w-7 h-7" : "w-5 h-5";
+  return (
+    <div className={`${dim} rounded-full border-2 border-outline-variant bg-surface-container shrink-0 overflow-hidden flex items-center justify-center`}>
+      {logo
+        ? <Image src={logo} alt={name} width={28} height={28} className="w-full h-full object-contain scale-[1.8]" unoptimized />
+        : <span className="text-[10px] font-black text-on-surface-variant">{name.slice(0, 2).toUpperCase()}</span>
+      }
+    </div>
+  );
+}
 
 export const revalidate = 300;
 
@@ -25,14 +36,32 @@ export default async function StatsPage() {
     fetchStandings(LEAGUE_ID, SEASON),
   ]);
 
-  const allTeams = standings.flatMap((g) => g.teams);
+  const allTeamsRaw = standings.flatMap((g) => g.teams);
+  // Deduplicate by teamId — some teams appear in multiple groups in the API response
+  const seenTeamIds = new Set<string>();
+  const allTeams = allTeamsRaw.filter((t) => {
+    if (seenTeamIds.has(t.teamId)) return false;
+    seenTeamIds.add(t.teamId);
+    return true;
+  });
   const mostGoalsFor = [...allTeams].sort((a, b) => b.goalsFor - a.goalsFor).slice(0, 8);
   const mostGoalsAgainst = [...allTeams].sort((a, b) => b.goalsAgainst - a.goalsAgainst).slice(0, 8);
 
-  // Build discipline: sum yellow+red cards per team from standings data (we don't have per-team card API here,
-  // so we use top scorers/yellows data to derive team discipline from player yellows/reds)
-  const teamDisciplineMap = new Map<string, { name: string; logo: string; flag: string; yellow: number; red: number }>();
-  [...yellows, ...reds].forEach((p) => {
+  // Merge yellows + reds by playerId so each player is counted once,
+  // then aggregate per team.
+  const playerCardMap = new Map<number, PlayerStatEntry>();
+  for (const p of yellows) playerCardMap.set(p.playerId, p);
+  for (const p of reds) {
+    const existing = playerCardMap.get(p.playerId);
+    if (existing) {
+      // Already have this player from yellows list — keep the entry as-is
+      // (normalizePlayerStat already sums both card types from the API response)
+    } else {
+      playerCardMap.set(p.playerId, p);
+    }
+  }
+  const teamDisciplineMap = new Map<string, { name: string; logo: string; yellow: number; red: number }>();
+  for (const p of playerCardMap.values()) {
     const existing = teamDisciplineMap.get(p.teamName);
     if (existing) {
       existing.yellow += p.yellowCards;
@@ -41,12 +70,11 @@ export default async function StatsPage() {
       teamDisciplineMap.set(p.teamName, {
         name: p.teamName,
         logo: p.teamLogo,
-        flag: getCountryConfig(p.teamName).flag,
         yellow: p.yellowCards,
         red: p.redCards,
       });
     }
-  });
+  }
   const discipline = Array.from(teamDisciplineMap.values())
     .sort((a, b) => b.yellow + b.red - (a.yellow + a.red))
     .slice(0, 6);
@@ -127,7 +155,6 @@ export default async function StatsPage() {
                 {ratings.slice(0, 8).map((p, i) => {
                   const pct = maxRating > 0 ? ((p.rating ?? 0) / maxRating) * 100 : 0;
                   const barColor = i === 0 ? "bg-primary" : i === 1 ? "bg-tertiary" : "bg-outline";
-                  const flag = getCountryConfig(p.teamName).flag;
                   return (
                     <div key={p.playerId}
                       className="flex items-center justify-between py-2 border-b border-surface-container-high last:border-0">
@@ -138,7 +165,7 @@ export default async function StatsPage() {
                         <span className="font-montserrat font-bold text-base text-on-background truncate">
                           {p.playerName}
                         </span>
-                        <span className="text-sm shrink-0">{flag}</span>
+                        <TeamCircle logo={p.teamLogo} name={p.teamName} size="sm" />
                       </div>
                       <div className="flex items-center gap-4 flex-1 ml-4">
                         <div className="flex-grow h-3 bg-surface-container-high rounded-full overflow-hidden">
@@ -231,7 +258,7 @@ export default async function StatsPage() {
                 {discipline.map((t) => (
                   <div key={t.name} className="flex justify-between items-center">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-lg shrink-0">{t.flag}</span>
+                      <TeamCircle logo={t.logo} name={t.name} size="sm" />
                       <span className="font-bold text-sm text-on-background truncate">{t.name}</span>
                     </div>
                     <div className="flex gap-2 shrink-0">
@@ -255,7 +282,6 @@ export default async function StatsPage() {
 // ─── ScorerRow ────────────────────────────────────────────────────────────────
 
 function ScorerRow({ player, rank, isFirst }: { player: PlayerStatEntry; rank: number; isFirst: boolean }) {
-  const flag = getCountryConfig(player.teamName).flag;
   const hasPhoto = !!player.playerPhoto;
 
   return (
@@ -274,16 +300,14 @@ function ScorerRow({ player, rank, isFirst }: { player: PlayerStatEntry; rank: n
             unoptimized
           />
         ) : (
-          <div className="w-12 h-12 rounded-full border-2 border-outline-variant bg-surface-container-high flex items-center justify-center shrink-0">
-            <span className="text-2xl">{flag}</span>
-          </div>
+          <TeamCircle logo={player.teamLogo} name={player.teamName} size="md" />
         )}
         <div>
           <h3 className="font-montserrat font-bold text-lg text-on-background leading-none">
             {player.playerName}
           </h3>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-lg">{flag}</span>
+            <TeamCircle logo={player.teamLogo} name={player.teamName} size="sm" />
             <span className="text-xs text-on-surface-variant">{player.teamName}</span>
           </div>
         </div>
@@ -301,7 +325,6 @@ function ScorerRow({ player, rank, isFirst }: { player: PlayerStatEntry; rank: n
 // ─── AssistCard ───────────────────────────────────────────────────────────────
 
 function AssistCard({ player }: { player: PlayerStatEntry }) {
-  const flag = getCountryConfig(player.teamName).flag;
   const hasPhoto = !!player.playerPhoto;
 
   return (
@@ -311,7 +334,7 @@ function AssistCard({ player }: { player: PlayerStatEntry }) {
           <Image src={player.playerPhoto} alt={player.playerName} width={56} height={56}
             className="w-full h-full object-cover" unoptimized />
         ) : (
-          <span className="text-2xl">{flag}</span>
+          <TeamCircle logo={player.teamLogo} name={player.teamName} size="md" />
         )}
       </div>
       <div className="flex-grow min-w-0">

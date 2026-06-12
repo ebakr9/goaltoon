@@ -12,7 +12,7 @@ import PredictionWidget from "@/components/PredictionWidget";
 import MatchCountdown from "@/components/MatchCountdown";
 import LocalTime from "@/components/LocalTime";
 
-interface Props { params: { id: string } }
+interface Props { params: { id: string }; searchParams: { date?: string } }
 
 export const revalidate = 30;
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props) {
   return { title: `${match.homeTeam.name} vs ${match.awayTeam.name} – Goaltoon` };
 }
 
-export default async function MatchPage({ params }: Props) {
+export default async function MatchPage({ params, searchParams }: Props) {
   const [match, events, stats, lineups] = await Promise.all([
     fetchFixtureById(params.id),
     fetchFixtureEvents(params.id),
@@ -42,7 +42,8 @@ export default async function MatchPage({ params }: Props) {
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-14 py-6">
 
       {/* Back */}
-      <a href="/" className="back-link inline-flex items-center gap-1.5 barlow text-sm font-bold
+      <a href={searchParams.date ? `/?date=${searchParams.date}` : "/"}
+        className="back-link inline-flex items-center gap-1.5 barlow text-sm font-bold
         tracking-wide uppercase mb-5">
         ← Back
       </a>

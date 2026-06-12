@@ -3,14 +3,16 @@ import { fetchFixturesByDate, NormalizedMatch } from "@/lib/apifootball";
 import { LEAGUE_IDS } from "@/lib/leagues";
 import LiveScoreClient from "@/components/LiveScoreClient";
 import HeroCountdown from "@/components/HeroCountdown";
+import LocalTime from "@/components/LocalTime";
 
 export const revalidate = 60;
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: { date?: string } }) {
   const today = new Date().toISOString().slice(0, 10);
+  const initialDate = searchParams.date ?? today;
   let matches: NormalizedMatch[] = [];
   try {
-    const all = await fetchFixturesByDate(today);
+    const all = await fetchFixturesByDate(initialDate);
     matches = all.filter((m) => LEAGUE_IDS.includes(m.leagueId ?? ""));
   } catch { /**/ }
 
@@ -20,7 +22,7 @@ export default async function HomePage() {
 
   const featured = live[0] ?? upcoming[0] ?? null;
 
-  const initial = { live, upcoming, finished, date: today, leagueId: "all", fetchedAt: Date.now() };
+  const initial = { live, upcoming, finished, date: initialDate, leagueId: "all", fetchedAt: Date.now() };
 
   return (
     <>
@@ -138,7 +140,7 @@ function FeaturedCard({ match }: { match: NormalizedMatch | null }) {
             rounded-xl border-2 border-outline-variant text-on-surface tabular-nums shrink-0">
             {match.score.home !== null
               ? `${match.score.home} – ${match.score.away}`
-              : match.time}
+              : <LocalTime timestamp={match.timestamp} stackTz />}
           </div>
 
           {/* Away */}

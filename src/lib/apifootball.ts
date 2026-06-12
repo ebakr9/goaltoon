@@ -387,7 +387,15 @@ export interface PlayerStatEntry {
 }
 
 function normalizePlayerStat(p: AFPlayerStatRaw, rank: number): PlayerStatEntry {
+  // Some players have multiple statistics entries (e.g. played in multiple leagues/teams).
+  // Sum numeric fields across all entries; use the first entry for team info and rating.
   const s = p.statistics[0];
+  const goals    = p.statistics.reduce((n, x) => n + (x.goals.total   ?? 0), 0);
+  const assists  = p.statistics.reduce((n, x) => n + (x.goals.assists ?? 0), 0);
+  const yellow   = p.statistics.reduce((n, x) => n + (x.cards.yellow  ?? 0), 0);
+  const red      = p.statistics.reduce((n, x) => n + (x.cards.red     ?? 0), 0);
+  const apps     = p.statistics.reduce((n, x) => n + (x.games.appearences ?? 0), 0);
+  const ratingRaw = s?.games.rating ? parseFloat(s.games.rating) : null;
   return {
     rank,
     playerId: p.player.id,
@@ -395,12 +403,12 @@ function normalizePlayerStat(p: AFPlayerStatRaw, rank: number): PlayerStatEntry 
     playerPhoto: p.player.photo,
     teamName: s?.team.name ?? "",
     teamLogo: s?.team.logo ?? "",
-    goals: s?.goals.total ?? 0,
-    assists: s?.goals.assists ?? 0,
-    yellowCards: s?.cards.yellow ?? 0,
-    redCards: s?.cards.red ?? 0,
-    rating: s?.games.rating ? parseFloat(s.games.rating) : null,
-    appearances: s?.games.appearences ?? 0,
+    goals,
+    assists,
+    yellowCards: yellow,
+    redCards: red,
+    rating: ratingRaw,
+    appearances: apps,
   };
 }
 
