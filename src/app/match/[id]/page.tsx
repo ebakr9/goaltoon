@@ -59,9 +59,61 @@ export default async function MatchPage({ params, searchParams }: Props) {
         >
           <div className="absolute inset-0 stadium-geo opacity-50 z-0" />
 
+          {/* ── MOBILE layout: single row [logo name | score | logo name] ── */}
+          <div className="flex sm:hidden items-center justify-between w-full px-3 py-4 relative z-10 gap-2">
+            {/* Home */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {match.homeTeam.logo
+                ? <div className="w-10 h-10 rounded-full bg-white border-2 border-white/80 overflow-hidden shrink-0 shadow-[2px_2px_0_0_#1a1c1c]">
+                    <Image src={match.homeTeam.logo} alt={match.homeTeam.name} width={40} height={40} className="w-full h-full object-contain" unoptimized />
+                  </div>
+                : <span className="text-2xl shrink-0">{hCfg.flag}</span>
+              }
+              <span className="font-montserrat font-black text-sm text-white leading-tight drop-shadow-[1px_1px_0px_#1a1c1c] truncate">
+                {abbr(match.homeTeam.name)}
+              </span>
+            </div>
+
+            {/* Score center */}
+            <div className="flex flex-col items-center shrink-0 gap-1">
+              {isLive ? (
+                <div className="flex items-center gap-1 bg-error text-white font-bold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white liveblink" />
+                  {match.minute}&apos;
+                </div>
+              ) : isDone ? (
+                <span className="barlow text-[10px] font-bold uppercase tracking-widest text-white/70">FT</span>
+              ) : (
+                <span className="barlow text-[10px] font-bold text-white/70"><LocalTime timestamp={match.timestamp} /></span>
+              )}
+              <div className="glass-panel px-3 py-1.5 rounded-xl" style={{ boxShadow: "3px 3px 0 0 #1a1c1c" }}>
+                <span className="font-montserrat font-black text-3xl text-on-surface tabular-nums tracking-tighter">
+                  {match.score.home !== null ? `${match.score.home}–${match.score.away}` : "vs"}
+                </span>
+              </div>
+              {match.halftime.home !== null && (
+                <span className="text-white/60 text-[9px] font-bold">HT {match.halftime.home}–{match.halftime.away}</span>
+              )}
+            </div>
+
+            {/* Away */}
+            <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+              <span className="font-montserrat font-black text-sm text-white leading-tight drop-shadow-[1px_1px_0px_#1a1c1c] truncate text-right">
+                {abbr(match.awayTeam.name)}
+              </span>
+              {match.awayTeam.logo
+                ? <div className="w-10 h-10 rounded-full bg-white border-2 border-white/80 overflow-hidden shrink-0 shadow-[2px_2px_0_0_#1a1c1c]">
+                    <Image src={match.awayTeam.logo} alt={match.awayTeam.name} width={40} height={40} className="w-full h-full object-contain" unoptimized />
+                  </div>
+                : <span className="text-2xl shrink-0">{aCfg.flag}</span>
+              }
+            </div>
+          </div>
+
+          {/* ── DESKTOP layout: original three-column ── */}
           {/* Home side */}
           <div
-            className="flex-1 p-5 md:p-7 flex flex-col items-center justify-center relative z-10"
+            className="hidden sm:flex flex-1 p-5 md:p-7 flex-col items-center justify-center relative z-10"
             style={{ background: `linear-gradient(to right, ${hCfg.color}cc, transparent)` }}
           >
             {match.homeTeam.logo ? (
@@ -79,9 +131,8 @@ export default async function MatchPage({ params, searchParams }: Props) {
             </h2>
           </div>
 
-          {/* Score center */}
-          <div className="flex flex-col items-center justify-center py-5 px-4 z-20 relative gap-2.5 shrink-0">
-            {/* Status badge */}
+          {/* Score center — desktop */}
+          <div className="hidden sm:flex flex-col items-center justify-center py-5 px-4 z-20 relative gap-2.5 shrink-0">
             {isLive ? (
               <div className="flex items-center gap-2 bg-error text-white font-bold px-3.5 py-1.5
                 rounded-full text-xs uppercase tracking-wider card-border-bold-sm">
@@ -99,8 +150,6 @@ export default async function MatchPage({ params, searchParams }: Props) {
                 <LocalTime timestamp={match.timestamp} />
               </span>
             )}
-
-            {/* Score glass */}
             <div className="glass-panel px-5 py-3 rounded-2xl" style={{ boxShadow: "6px 6px 0 0 #1a1c1c" }}>
               <div className="font-montserrat font-black text-5xl md:text-6xl text-on-surface
                 tabular-nums tracking-tighter">
@@ -109,13 +158,9 @@ export default async function MatchPage({ params, searchParams }: Props) {
                   : "vs"}
               </div>
             </div>
-
-            {/* Countdown — upcoming only */}
             {!isLive && !isDone && match.timestamp > 0 && (
               <MatchCountdown timestamp={match.timestamp} />
             )}
-
-            {/* Meta */}
             <div className="flex flex-col items-center gap-1">
               {match.halftime.home !== null && (
                 <span className="text-white/90 text-[11px] font-bold bg-black/60 px-3 py-1
@@ -129,9 +174,9 @@ export default async function MatchPage({ params, searchParams }: Props) {
             </div>
           </div>
 
-          {/* Away side */}
+          {/* Away side — desktop */}
           <div
-            className="flex-1 p-5 md:p-7 flex flex-col items-center justify-center relative z-10"
+            className="hidden sm:flex flex-1 p-5 md:p-7 flex-col items-center justify-center relative z-10"
             style={{ background: `linear-gradient(to left, ${aCfg.color}cc, transparent)` }}
           >
             {match.awayTeam.logo ? (

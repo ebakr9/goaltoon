@@ -73,13 +73,13 @@ export default function MatchDetailClient({ match: initial, events: ie, stats: i
       {/* ── Dashboard grid: Stats (left 8) + Events (right 4) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        {/* Stats — shown second on mobile, first on desktop */}
-        <section className="lg:col-span-8 order-2 lg:order-1">
+        {/* Stats — first on both mobile and desktop */}
+        <section className="lg:col-span-8 order-1">
           <StatsTab stats={stats} match={match} isLive={isLive} />
         </section>
 
-        {/* Events — shown first on mobile (most dynamic), right on desktop, sticky on scroll */}
-        <aside className="lg:col-span-4 order-1 lg:order-2">
+        {/* Events — second on mobile, right sidebar on desktop */}
+        <aside className="lg:col-span-4 order-2">
           <div className="rounded-2xl card-border-bold overflow-hidden">
             {/* Green header */}
             <div className="flex items-center gap-2.5 px-5 py-4 bg-primary text-on-primary
@@ -95,8 +95,8 @@ export default function MatchDetailClient({ match: initial, events: ie, stats: i
                 </span>
               )}
             </div>
-            {/* Fixed height = ~7 events visible, scroll for the rest */}
-            <div className="overflow-y-auto" style={{ maxHeight: 600 }}>
+            {/* Desktop: fixed height with inner scroll. Mobile: full height, no inner scroll */}
+            <div className="overflow-y-auto lg:max-h-[600px]">
               <EventsTab events={events} match={match} isLive={isLive} />
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { DotLottie, DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 const NAV_LINKS = [
@@ -14,11 +14,14 @@ const NAV_LINKS = [
 export default function TopNav() {
   const pathname = usePathname();
   const dotLottieRef = useRef<DotLottie | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Play once on mount
   useEffect(() => {
     dotLottieRef.current?.play();
   }, []);
+
+  // Close menu on route change
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
 
   function handleMouseEnter() {
     const dl = dotLottieRef.current;
@@ -30,9 +33,9 @@ export default function TopNav() {
   return (
     <nav
       className="bg-white w-full top-0 sticky z-50 border-b-2 border-outline-variant"
-      style={{ height: "var(--topbar-h)", boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.1)" }}
+      style={{ boxShadow: "4px 4px 0px 0px rgba(0,0,0,0.1)" }}
     >
-      <div className="flex items-center justify-between h-full px-4 md:px-10 max-w-container-max mx-auto relative">
+      <div className="flex items-center justify-between h-[var(--topbar-h)] px-4 md:px-10 max-w-container-max mx-auto relative">
         {/* Logo */}
         <div className="flex items-center gap-2 select-none shrink-0">
           <a href="/" className="flex items-center gap-2">
@@ -75,13 +78,37 @@ export default function TopNav() {
           })}
         </div>
 
-        {/* Mobile menu */}
-        <div className="flex items-center gap-3">
-          <button className="md:hidden text-primary" aria-label="Menu">
-            <span className="material-symbols-outlined">menu</span>
-          </button>
-        </div>
+        {/* Mobile hamburger */}
+        <button
+          className="md:hidden text-primary p-1"
+          aria-label="Toggle menu"
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          <span className="material-symbols-outlined text-[28px]">
+            {menuOpen ? "close" : "menu"}
+          </span>
+        </button>
       </div>
+
+      {/* Mobile dropdown */}
+      {menuOpen && (
+        <div className="md:hidden border-t-2 border-outline-variant bg-white">
+          {NAV_LINKS.map((n) => {
+            const isActive = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
+            return (
+              <a
+                key={n.label}
+                href={n.href}
+                className={`flex items-center px-6 py-4 text-base font-bold border-b border-outline-variant transition-colors
+                  ${isActive ? "text-primary bg-primary/5 border-l-4 border-l-primary" : "text-on-surface hover:bg-surface-container-low"}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                {n.label}
+              </a>
+            );
+          })}
+        </div>
+      )}
     </nav>
   );
 }

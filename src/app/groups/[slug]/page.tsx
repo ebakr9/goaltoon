@@ -70,25 +70,30 @@ export default async function GroupDetailPage({ params }: { params: { slug: stri
       {/* Standings table */}
       <section>
         <div className="rounded-2xl overflow-hidden card-border-bold">
-          {/* Table header */}
-          <div className="px-5 py-3 flex items-center bg-primary border-b-4 border-on-surface">
-            <span className="font-montserrat font-black text-sm uppercase tracking-widest text-on-primary flex-1">
-              Team
-            </span>
-            <div className="flex gap-4">
-              {["P", "W", "D", "L", "GF", "GA", "GD", "Pts"].map((h) => (
-                <span key={h}
-                  className="barlow text-xs font-bold uppercase text-on-primary/70 w-6 text-center">
-                  {h}
+          {/* Scrollable wrapper — swipeable on mobile */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[520px]">
+              {/* Table header */}
+              <div className="px-5 py-3 flex items-center bg-primary border-b-4 border-on-surface">
+                <span className="font-montserrat font-black text-sm uppercase tracking-widest text-on-primary flex-1">
+                  Team
                 </span>
-              ))}
-            </div>
-          </div>
+                <div className="flex gap-4">
+                  {["P", "W", "D", "L", "GF", "GA", "GD", "Pts"].map((h) => (
+                    <span key={h}
+                      className="barlow text-xs font-bold uppercase text-on-primary/70 w-6 text-center">
+                      {h}
+                    </span>
+                  ))}
+                </div>
+              </div>
 
-          <div className="bg-white">
-            {group.teams.map((team, i) => (
-              <StandingRow key={team.teamId} team={team} isLast={i === group.teams.length - 1} />
-            ))}
+              <div className="bg-white">
+                {group.teams.map((team, i) => (
+                  <StandingRow key={team.teamId} team={team} isLast={i === group.teams.length - 1} />
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Legend */}
