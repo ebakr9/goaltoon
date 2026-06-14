@@ -9,6 +9,7 @@ import {
   NormalizedMatch,
 } from "@/lib/apifootball";
 import { getCached, setCached } from "@/lib/redis";
+import GroupFixtureCard from "@/components/GroupFixtureCard";
 
 export const revalidate = 120;
 
@@ -120,7 +121,7 @@ export default async function GroupDetailPage({ params }: { params: { slug: stri
         ) : (
           <div className="flex flex-col gap-3">
             {groupFixtures.map((match) => (
-              <FixtureCard key={match.id} match={match} />
+              <GroupFixtureCard key={match.id} match={match} />
             ))}
           </div>
         )}
@@ -183,55 +184,3 @@ function StandingRow({ team, isLast }: { team: StandingEntry; isLast: boolean })
   );
 }
 
-// ─── Fixture Card ─────────────────────────────────────────────────────────────
-
-function FixtureCard({ match }: { match: NormalizedMatch }) {
-  const date = new Date(match.timestamp * 1000);
-  const dateStr = date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  const timeStr = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC";
-
-  return (
-    <Link href={`/match/${match.id}`}
-      className="card-border-bold-sm rounded-xl bg-white hover:bg-surface-container-low transition-colors overflow-hidden block">
-      <div className="flex items-center px-4 py-3 gap-4">
-
-        {/* Date/time */}
-        <div className="shrink-0 text-center min-w-[72px]">
-          <p className="text-xs font-bold text-primary">{dateStr.split(",")[0]}</p>
-          <p className="text-sm font-black text-on-surface font-montserrat">{dateStr.replace(/^\w+,\s*/, "")}</p>
-          <p className="text-xs text-on-surface-variant mt-0.5">{timeStr}</p>
-        </div>
-
-        <div className="w-px h-10 bg-outline-variant shrink-0" />
-
-        {/* Home team */}
-        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          <span className="font-bold text-sm text-on-surface truncate text-right">{match.homeTeam.name}</span>
-          {match.homeTeam.logo && (
-            <Image src={match.homeTeam.logo} alt={match.homeTeam.name} width={28} height={28}
-              className="object-contain shrink-0" unoptimized />
-          )}
-        </div>
-
-        {/* VS */}
-        <div className="shrink-0 px-2">
-          <span className="font-montserrat font-black text-xs text-on-surface-variant bg-surface-container px-2 py-1 rounded">
-            VS
-          </span>
-        </div>
-
-        {/* Away team */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {match.awayTeam.logo && (
-            <Image src={match.awayTeam.logo} alt={match.awayTeam.name} width={28} height={28}
-              className="object-contain shrink-0" unoptimized />
-          )}
-          <span className="font-bold text-sm text-on-surface truncate">{match.awayTeam.name}</span>
-        </div>
-
-        {/* Arrow */}
-        <span className="material-symbols-outlined text-on-surface-variant text-base shrink-0">chevron_right</span>
-      </div>
-    </Link>
-  );
-}

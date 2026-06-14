@@ -14,19 +14,30 @@ interface MatchData {
   fetchedAt: number;
 }
 
-const toISO = (d: Date) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+const userTz = typeof Intl !== "undefined"
+  ? Intl.DateTimeFormat().resolvedOptions().timeZone
+  : "UTC";
+
+// Returns YYYY-MM-DD in the user's local timezone
+const today  = () => new Date().toLocaleDateString("en-CA", { timeZone: userTz });
+
+const toISO = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: userTz });
+
+const offset = (n: number) => {
+  // Shift from local today by n days
+  const base = new Date();
+  base.setDate(base.getDate() + n);
+  return toISO(base);
 };
-const today  = () => toISO(new Date());
-const offset = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return toISO(d); };
 
 
 export default function LiveScoreClient({ initial }: { initial: MatchData }) {
-  const [data, setData]           = useState<MatchData>(initial);
-  const [selDate, setSelDate]     = useState(initial.date);
+  // Always start from local today — SSR initial.date is UTC which may differ
+  const localToday                = today();
+  const [data, setData]           = useState<MatchData>(
+    initial.date === localToday ? initial : { ...initial, live: [], upcoming: [], finished: [] }
+  );
+  const [selDate, setSelDate]     = useState(localToday);
   const [selLeague, setSelLeague] = useState(initial.leagueId);
   const [loading, setLoading]     = useState(false);
   const [updated, setUpdated]     = useState<Date | null>(null);
@@ -37,12 +48,23 @@ export default function LiveScoreClient({ initial }: { initial: MatchData }) {
     pending.current = key;
     setLoading(true);
     try {
-      const res = await fetch(`/api/live-scores?date=${date}&leagueId=${league}`, { cache: "no-store" });
+      const res = await fetch(
+        `/api/live-scores?date=${date}&leagueId=${league}&tz=${encodeURIComponent(userTz)}`,
+        { cache: "no-store" }
+      );
       if (res.ok && pending.current === key) {
         setData(await res.json());
         setUpdated(new Date());
       }
     } finally { if (pending.current === key) setLoading(false); }
+  }, []);
+
+  // On mount, fetch today's data with the correct timezone if SSR data didn't match
+  useEffect(() => {
+    if (initial.date !== localToday) {
+      load(localToday, selLeague);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Smart polling: faster when live, slower otherwise

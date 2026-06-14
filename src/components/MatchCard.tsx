@@ -98,7 +98,11 @@ export default function MatchCard({ match, date }: { match: NormalizedMatch; dat
                     </span>
                   </div>
                 )}
-                <span className="text-[10px] text-on-surface-variant mt-1">{match.date}</span>
+                <span className="text-[10px] text-on-surface-variant mt-1">
+                  {match.timestamp
+                    ? new Date(match.timestamp * 1000).toLocaleDateString([], { day: "2-digit", month: "short" })
+                    : match.date}
+                </span>
               </div>
 
               {/* Away */}

@@ -30,16 +30,18 @@ function splitByStatus(matches: NormalizedMatch[]) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const todayUTC  = new Date().toISOString().slice(0, 10);
-  const date      = searchParams.get("date") ?? todayUTC;
+  const tz        = searchParams.get("tz") ?? "UTC";
+  // "today" in the user's local timezone
+  const todayLocal = new Date().toLocaleDateString("en-CA", { timeZone: tz });
+  const date      = searchParams.get("date") ?? todayLocal;
   const leagueId  = searchParams.get("leagueId") ?? "all";
-  const isToday   = date === todayUTC;
-  const isPast    = date < todayUTC;
+  const isToday   = date === todayLocal;
+  const isPast    = date < todayLocal;
 
   // ── 1. Try Redis cache ────────────────────────────────────────────────────
-  // Cache key covers the raw date data (league filter is applied after).
-  const dateCacheKey    = `af:fixtures:date:${date}`;
-  const liveCacheKey    = "af:fixtures:live";
+  // Cache key includes timezone so UTC and +03:00 users don't share stale entries.
+  const dateCacheKey    = `af:fixtures:date:${date}:${tz}`;
+  const liveCacheKey    = `af:fixtures:live:${tz}`;
 
   let allFixtures: NormalizedMatch[] | null = await getCached<NormalizedMatch[]>(dateCacheKey);
   let liveFixtures: NormalizedMatch[] | null = null;
@@ -48,14 +50,14 @@ export async function GET(req: NextRequest) {
   if (isToday) {
     liveFixtures = await getCached<NormalizedMatch[]>(liveCacheKey);
     if (!liveFixtures) {
-      liveFixtures = await fetchLiveFixtures();
+      liveFixtures = await fetchLiveFixtures(tz);
       // Live data: short TTL (30 s) regardless of plan
       await setCached(liveCacheKey, liveFixtures, 30);
     }
   }
 
   if (!allFixtures) {
-    allFixtures = await fetchFixturesByDate(date);
+    allFixtures = await fetchFixturesByDate(date, tz);
 
     // TTL strategy to protect the 100 req/day free limit:
     //  - Past dates  → fixtures won't change → 24 h

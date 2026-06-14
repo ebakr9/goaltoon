@@ -194,8 +194,10 @@ function normalizeStatus(short: string): NormalizedMatch["status"] {
 }
 
 function normalizeFixture(f: AFFixture): NormalizedMatch {
-  const iso = f.fixture.date; // e.g. "2024-08-16T19:00:00+00:00"
-  const utc = new Date(iso).toISOString();
+  // Use the date/time from the API response directly — it's already in the
+  // timezone we requested. Converting to UTC would shift dates for users
+  // not in UTC (e.g. a 01:00 +03:00 match would appear as 22:00 on the prev day).
+  const iso = f.fixture.date; // e.g. "2026-06-15T01:00:00+03:00"
   return {
     id: String(f.fixture.id),
     homeTeam: {
@@ -217,8 +219,8 @@ function normalizeFixture(f: AFFixture): NormalizedMatch {
     },
     status: normalizeStatus(f.fixture.status.short),
     minute: f.fixture.status.elapsed ?? undefined,
-    date: utc.slice(0, 10),
-    time: utc.slice(11, 16),
+    date: iso.slice(0, 10),
+    time: iso.slice(11, 16),
     venue: f.fixture.venue.name ?? undefined,
     league: f.league.name,
     leagueId: String(f.league.id),
@@ -234,8 +236,8 @@ function normalizeFixture(f: AFFixture): NormalizedMatch {
  * All fixtures for a given date (YYYY-MM-DD).
  * One API request covers all leagues — filter client-side by leagueId.
  */
-export async function fetchFixturesByDate(date: string): Promise<NormalizedMatch[]> {
-  const raw = await apiFetch<AFFixture[]>(`/fixtures?date=${date}&timezone=UTC`);
+export async function fetchFixturesByDate(date: string, tz = "UTC"): Promise<NormalizedMatch[]> {
+  const raw = await apiFetch<AFFixture[]>(`/fixtures?date=${date}&timezone=${encodeURIComponent(tz)}`);
   if (!raw) return [];
   return raw.map(normalizeFixture);
 }
@@ -243,8 +245,8 @@ export async function fetchFixturesByDate(date: string): Promise<NormalizedMatch
 /**
  * All currently live fixtures across every competition.
  */
-export async function fetchLiveFixtures(): Promise<NormalizedMatch[]> {
-  const raw = await apiFetch<AFFixture[]>(`/fixtures?live=all&timezone=UTC`);
+export async function fetchLiveFixtures(tz = "UTC"): Promise<NormalizedMatch[]> {
+  const raw = await apiFetch<AFFixture[]>(`/fixtures?live=all&timezone=${encodeURIComponent(tz)}`);
   if (!raw) return [];
   return raw.map(normalizeFixture);
 }
@@ -252,8 +254,8 @@ export async function fetchLiveFixtures(): Promise<NormalizedMatch[]> {
 /**
  * Single fixture detail by ID.
  */
-export async function fetchFixtureById(id: string): Promise<NormalizedMatch | null> {
-  const raw = await apiFetch<AFFixture[]>(`/fixtures?id=${id}&timezone=UTC`);
+export async function fetchFixtureById(id: string, tz = "UTC"): Promise<NormalizedMatch | null> {
+  const raw = await apiFetch<AFFixture[]>(`/fixtures?id=${id}&timezone=${encodeURIComponent(tz)}`);
   if (!raw || raw.length === 0) return null;
   return normalizeFixture(raw[0]);
 }
