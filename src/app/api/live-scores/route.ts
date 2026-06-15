@@ -74,9 +74,15 @@ export async function GET(req: NextRequest) {
 
   // ── 2. Merge live minute/status into the date fixtures ───────────────────
   // The /fixtures?live=all response has real-time elapsed minutes.
-  if (isToday && liveFixtures && liveFixtures.length > 0) {
+  // If a match was "live" in cached date fixtures but is no longer in the live
+  // endpoint, it has finished — mark it so rather than serving the stale status.
+  if (isToday && liveFixtures) {
     const liveMap = new Map(liveFixtures.map((m) => [m.id, m]));
-    allFixtures = allFixtures.map((m) => liveMap.get(m.id) ?? m);
+    allFixtures = allFixtures.map((m) => {
+      if (liveMap.has(m.id)) return liveMap.get(m.id)!;
+      if (m.status === "live") return { ...m, status: "finished" as const };
+      return m;
+    });
   }
 
   // ── 3. Filter by requested league and split ───────────────────────────────

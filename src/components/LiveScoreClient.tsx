@@ -59,11 +59,9 @@ export default function LiveScoreClient({ initial }: { initial: MatchData }) {
     } finally { if (pending.current === key) setLoading(false); }
   }, []);
 
-  // On mount, fetch today's data with the correct timezone if SSR data didn't match
+  // Always fetch on mount — SSR data may be stale (finished matches not showing, etc.)
   useEffect(() => {
-    if (initial.date !== localToday) {
-      load(localToday, selLeague);
-    }
+    load(localToday, selLeague);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

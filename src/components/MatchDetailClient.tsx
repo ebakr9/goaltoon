@@ -138,21 +138,18 @@ function EventsTab({ events, match, isLive }: { events: MatchEvent[]; match: Nor
   }
 
   return (
-    <div className="relative diagonal-pattern p-6 flex flex-col gap-6">
-      {/* Vertical line — p-6(24px) + half w-8(16px) = 40px = left-10 ✓ */}
-      <div className="absolute left-10 top-6 bottom-6 w-1 bg-on-surface rounded-full z-0" />
+    <div className="relative diagonal-pattern px-3 py-6 flex flex-col gap-3">
+      {/* Center vertical line */}
+      <div className="absolute left-1/2 -translate-x-px top-6 bottom-6 w-0.5 bg-on-surface rounded-full z-0" />
 
       {items.map((item, i) =>
         item === "HT" ? (
-          <div key="HT" className="relative flex items-center gap-4 z-10">
+          <div key="HT" className="relative flex justify-center z-10">
             <div className="w-8 h-8 rounded-full bg-surface-container border-4 border-on-surface
-              flex items-center justify-center shrink-0 text-[9px] font-black tracking-wider
+              flex items-center justify-center text-[9px] font-black tracking-wider
               text-on-surface-variant shadow-[2px_2px_0_0_#1a1c1c]">
               HT
             </div>
-            <span className="barlow text-[10px] font-bold tracking-widest uppercase text-on-surface-variant">
-              Half Time
-            </span>
           </div>
         ) : (
           <TimelineEvent key={i} event={item as MatchEvent} match={match} />
@@ -204,17 +201,34 @@ function TimelineEvent({ event: e, match }: { event: MatchEvent; match: Normaliz
   const isHome = e.teamId === match.homeTeam.id;
   const { emoji, bg } = circleStyle(e.type, e.detail, isHome);
   const body = eventBody(e);
+  const heading = eventHeading(e);
 
   return (
-    <div className="relative flex gap-4 items-start z-10 group">
-      <div className={`w-8 h-8 rounded-full ${bg} border-4 border-on-surface shrink-0 mt-1
+    <div className="relative grid grid-cols-[1fr_2rem_1fr] gap-x-2 items-center z-10">
+      {/* Left column — home events only */}
+      <div className="flex justify-end">
+        {isHome && (
+          <div className="bg-surface-container-lowest rounded-xl p-2.5 card-border-bold-sm text-right w-full">
+            <p className="font-bold text-xs text-on-surface leading-tight">{heading}</p>
+            {body && <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium break-words">{body}</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Center — emoji circle (always) */}
+      <div className={`w-8 h-8 rounded-full ${bg} border-4 border-on-surface shrink-0
         flex items-center justify-center text-sm shadow-[2px_2px_0_0_#1a1c1c]`}>
         {emoji}
       </div>
-      <div className="flex-grow bg-surface-container-lowest rounded-xl p-4 card-border-bold-sm
-        transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:-translate-x-0.5">
-        <p className="font-bold text-sm text-on-surface">{eventHeading(e)}</p>
-        {body && <p className="text-[13px] text-on-surface-variant mt-0.5 font-medium">{body}</p>}
+
+      {/* Right column — away events only */}
+      <div className="flex justify-start">
+        {!isHome && (
+          <div className="bg-surface-container-lowest rounded-xl p-2.5 card-border-bold-sm text-left w-full">
+            <p className="font-bold text-xs text-on-surface leading-tight">{heading}</p>
+            {body && <p className="text-[11px] text-on-surface-variant mt-0.5 font-medium break-words">{body}</p>}
+          </div>
+        )}
       </div>
     </div>
   );
