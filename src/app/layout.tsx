@@ -6,7 +6,12 @@ import TopNav from "@/components/TopNav";
 export const metadata: Metadata = {
   title: "Goaltoon – Independent Football Scores & Match Statistics",
   description: "Live scores, fixtures, events and match statistics for football leagues and international tournaments.",
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
