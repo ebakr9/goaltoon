@@ -75,8 +75,10 @@ export default async function StatsPage() {
       });
     }
   }
+  // 1 red card weighs as much as 2 yellow cards when ranking
+  const disciplineScore = (t: { yellow: number; red: number }) => t.yellow + t.red * 2;
   const discipline = Array.from(teamDisciplineMap.values())
-    .sort((a, b) => b.yellow + b.red - (a.yellow + a.red))
+    .sort((a, b) => disciplineScore(b) - disciplineScore(a))
     .slice(0, 6);
 
   const maxRating = ratings.length > 0 ? ratings[0].rating ?? 10 : 10;
