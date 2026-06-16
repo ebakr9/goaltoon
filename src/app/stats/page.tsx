@@ -93,7 +93,7 @@ export default async function StatsPage() {
             Tournament Overview
           </span>
           <h1 className="font-montserrat font-black text-5xl md:text-6xl text-on-background leading-none">
-            Official Statistics
+            Tournament Statistics
           </h1>
         </div>
       </header>
