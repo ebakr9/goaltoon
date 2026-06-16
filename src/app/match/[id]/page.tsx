@@ -202,12 +202,7 @@ export default async function MatchPage({ params, searchParams }: Props) {
         >
           <h3 className="font-montserrat font-black text-base border-b-4 border-on-surface pb-2
             flex items-center gap-2 uppercase italic tracking-tight shrink-0">
-            <span
-              className="material-symbols-outlined text-primary"
-              style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
-            >
-              sports_soccer
-            </span>
+            <Image src="/icon.png" alt="Goaltoon" width={20} height={20} className="rounded-sm" />
             Goal Celebration
           </h3>
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useRef, useEffect, useState } from "react";
-import { DotLottie, DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 
 const NAV_LINKS = [
   { label: "Home",    href: "/" },
@@ -13,22 +13,10 @@ const NAV_LINKS = [
 
 export default function TopNav() {
   const pathname = usePathname();
-  const dotLottieRef = useRef<DotLottie | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    dotLottieRef.current?.play();
-  }, []);
 
   // Close menu on route change
   useEffect(() => { setMenuOpen(false); }, [pathname]);
-
-  function handleMouseEnter() {
-    const dl = dotLottieRef.current;
-    if (!dl) return;
-    dl.stop();
-    dl.play();
-  }
 
   return (
     <nav
@@ -39,25 +27,17 @@ export default function TopNav() {
         {/* Logo */}
         <div className="flex items-center gap-2 select-none shrink-0">
           <a href="/" className="flex items-center gap-2">
-            <span
-              className="material-symbols-outlined text-primary"
-              style={{ fontSize: 40, fontVariationSettings: "'FILL' 1" }}
-            >
-              sports_soccer
-            </span>
+            <Image
+              src="/icon.png"
+              alt="Goaltoon"
+              width={40}
+              height={40}
+              className="rounded-md"
+            />
             <span className="font-montserrat font-black text-2xl text-primary tracking-tight">
               Goaltoon
             </span>
           </a>
-          <div onMouseEnter={handleMouseEnter} style={{ width: 40, height: 40 }}>
-            <DotLottieReact
-              src="/animations/ball.lottie"
-              autoplay={false}
-              loop={false}
-              dotLottieRefCallback={(dl) => { dotLottieRef.current = dl; }}
-              style={{ width: 40, height: 40 }}
-            />
-          </div>
         </div>
 
         {/* Desktop links */}

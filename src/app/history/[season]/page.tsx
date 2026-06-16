@@ -186,7 +186,7 @@ export default function TournamentDetailPage({ params }: { params: { season: str
         {/* Stats bar */}
         <div className="bg-surface-container grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-outline-variant">
           <div className="flex items-center gap-4 px-6 py-4">
-            <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>sports_soccer</span>
+            <Image src="/icon.png" alt="Goaltoon" width={30} height={30} className="rounded-md" />
             <div className="flex items-center gap-3">
               <TeamCircle country={t.topScorer.country} size="md" />
               <div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import Image from "next/image";
 import "./globals.css";
 import TopNav from "@/components/TopNav";
 
@@ -44,7 +45,7 @@ function SiteFooter() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 md:px-10 max-w-container-max mx-auto text-center md:text-left">
         <div className="flex flex-col gap-3">
           <span className="font-montserrat font-bold text-on-surface-variant flex items-center justify-center md:justify-start gap-2">
-            <span className="material-symbols-outlined text-[20px]">sports_soccer</span>
+            <Image src="/icon.png" alt="Goaltoon" width={20} height={20} className="rounded-sm" />
             Goaltoon
           </span>
           <p className="text-sm text-on-surface-variant">

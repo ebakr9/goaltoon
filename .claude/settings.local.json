@@ -24,7 +24,8 @@
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Friendlies today:', d.get\\('results',0\\)\\); [print\\(f\\\\\"{m['teams']['home']['name']} vs {m['teams']['away']['name']} | {m['fixture']['status']['short']}\\\\\"\\) for m in d.get\\('response',[]\\)[:5]]\")",
       "WebFetch(domain:en.wikipedia.org)",
       "WebSearch",
-      "WebFetch(domain:www.thesoccerworldcups.com)"
+      "WebFetch(domain:www.thesoccerworldcups.com)",
+      "Bash(npx tsc *)"
     ]
   }
 }

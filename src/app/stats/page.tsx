@@ -106,8 +106,7 @@ export default async function StatsPage() {
           <section className="card-sticker p-6 flex flex-col gap-6">
             <div className="flex justify-between items-center border-b-2 border-surface-container-highest pb-4">
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-3xl text-secondary-container"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>sports_soccer</span>
+                <Image src="/icon.png" alt="Goaltoon" width={30} height={30} className="rounded-md" />
                 <h2 className="font-montserrat font-bold text-2xl text-on-background">Golden Boot Race</h2>
               </div>
               <span className="text-on-surface-variant font-bold text-sm">Goals</span>
